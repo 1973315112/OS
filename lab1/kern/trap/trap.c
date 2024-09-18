@@ -164,6 +164,12 @@ void exception_handler(struct trapframe *tf) {
              *(2)输出异常指令地址
              *(3)更新 tf->epc寄存器
             */
+            //输出指令异常类型：Illegal instruction
+            cprintf("Exception type:Illegal instruction\n");
+            //输出异常指令地址（"%08x":输出用0填充至8个字符的十六进制数）
+            cprintf("Illegal instruction at 0x%08x\n", tf->epc);
+            //更新 tf->epc寄存器
+            tf->epc +=4;
             break;
         case CAUSE_BREAKPOINT:
             //断点异常处理
