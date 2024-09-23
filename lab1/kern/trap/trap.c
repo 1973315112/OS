@@ -118,9 +118,9 @@ void interrupt_handler(struct trapframe *tf) {
             //(2)计数器（ticks）加一
             ticks++;
             //(3)计数器为100时，输出`100ticks`，num加一
-            if(ticks==100)
+            if(ticks==TICK_NUM)
             {
-                cprintf("100ticks\n");
+                print_ticks();
                 ticks=0;
                 num++;
                 //(4)打印次数为10时，调用<sbi.h>中的关机函数关机
@@ -159,28 +159,31 @@ void exception_handler(struct trapframe *tf) {
             break;
         case CAUSE_ILLEGAL_INSTRUCTION:
              // 非法指令异常处理
-             /* LAB1 CHALLENGE3   YOUR CODE :  */
-            /*(1)输出指令异常类型（ Illegal instruction）
+             /* LAB1 CHALLENGE3   2210705 CODE :  */
+            /*(1)输出指令异常类型（Illegal instruction）
              *(2)输出异常指令地址
              *(3)更新 tf->epc寄存器
             */
             //输出指令异常类型：Illegal instruction
             cprintf("Exception type:Illegal instruction\n");
             //输出异常指令地址（"%08x":输出用0填充至8个字符的十六进制数）
-            cprintf("Illegal instruction at 0x%08x\n", tf->epc);
+            cprintf("Illegal instruction caught at 0x%08x\n", tf->epc);
             //更新 tf->epc寄存器
-            tf->epc +=4;
+            tf->epc+=4;
             break;
         case CAUSE_BREAKPOINT:
             //断点异常处理
-            /* LAB1 CHALLLENGE3   YOUR CODE :  */
-            /*(1)输出指令异常类型（ breakpoint）
+            /* LAB1 CHALLLENGE3   2210628 CODE :  */
+            /*(1)输出指令异常类型（breakpoint）
              *(2)输出异常指令地址
              *(3)更新 tf->epc寄存器
             */
-            cprintf("Exception type:Breakpoint\n");
-            cprintf("Illegal instruction at 0x%08x\n", tf->epc);
-            tf->epc +=2;
+            //输出指令异常类型:breakpoint
+            cprintf("Exception type:breakpoint\n");
+            //输出异常指令地址
+            cprintf("ebreak caught at 0x%08x\n", tf->epc);
+            //更新tf->epc寄存器(ebreak 指令大小为 2 字节)
+            tf->epc+=2;
             break;
         case CAUSE_MISALIGNED_LOAD:
             break;

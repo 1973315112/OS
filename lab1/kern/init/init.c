@@ -27,15 +27,14 @@ int kern_init(void) {
     // grade_backtrace();
 
     idt_init();  // init interrupt descriptor table
-    __asm__ __volatile__("ebreak");//触发断点异常
     __asm__ __volatile__("mret");  // 触发非法指令异常
+    __asm__ __volatile__("ebreak");//触发断点异常
     // rdtime in mbare mode crashes
     clock_init();  // init clock interrupt
 
     intr_enable();  // enable irq interrupt
     
-    while (1)
-        ;
+    while (1) {}
 }
 
 void __attribute__((noinline))
