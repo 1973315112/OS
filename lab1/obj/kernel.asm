@@ -31,7 +31,7 @@ int kern_init(void) {
     80200022:	1b9000ef          	jal	ra,802009da <memset>
 
     cons_init();  // init the console
-    80200026:	14e000ef          	jal	ra,80200174 <cons_init>
+    80200026:	150000ef          	jal	ra,80200176 <cons_init>
 
     const char *message = "(THU.CST) os is loading ...\n";
     cprintf("%s\n\n", message);
@@ -39,554 +39,415 @@ int kern_init(void) {
     8020002e:	9c658593          	addi	a1,a1,-1594 # 802009f0 <etext+0x4>
     80200032:	00001517          	auipc	a0,0x1
     80200036:	9de50513          	addi	a0,a0,-1570 # 80200a10 <etext+0x24>
-    8020003a:	034000ef          	jal	ra,8020006e <cprintf>
+    8020003a:	036000ef          	jal	ra,80200070 <cprintf>
 
     print_kerninfo();
-    8020003e:	066000ef          	jal	ra,802000a4 <print_kerninfo>
+    8020003e:	068000ef          	jal	ra,802000a6 <print_kerninfo>
 
     // grade_backtrace();
 
     idt_init();  // init interrupt descriptor table
-    80200042:	142000ef          	jal	ra,80200184 <idt_init>
+    80200042:	144000ef          	jal	ra,80200186 <idt_init>
+    __asm__ __volatile__("ebreak");//触发断点异宗
+    80200046:	9002                	ebreak
     __asm__ __volatile__("mret");  // 触发非法指令异常
-    80200046:	30200073          	mret
+    80200048:	30200073          	mret
     // rdtime in mbare mode crashes
     clock_init();  // init clock interrupt
-    8020004a:	0e8000ef          	jal	ra,80200132 <clock_init>
+    8020004c:	0e8000ef          	jal	ra,80200134 <clock_init>
 
     intr_enable();  // enable irq interrupt
-    8020004e:	130000ef          	jal	ra,8020017e <intr_enable>
+    80200050:	130000ef          	jal	ra,80200180 <intr_enable>
     
     while (1)
-    80200052:	a001                	j	80200052 <kern_init+0x48>
+    80200054:	a001                	j	80200054 <kern_init+0x4a>
 
-0000000080200054 <cputch>:
-    80200054:	1141                	addi	sp,sp,-16
-    80200056:	e022                	sd	s0,0(sp)
-    80200058:	e406                	sd	ra,8(sp)
-    8020005a:	842e                	mv	s0,a1
-    8020005c:	11a000ef          	jal	ra,80200176 <cons_putc>
-    80200060:	401c                	lw	a5,0(s0)
-    80200062:	60a2                	ld	ra,8(sp)
-    80200064:	2785                	addiw	a5,a5,1
-    80200066:	c01c                	sw	a5,0(s0)
-    80200068:	6402                	ld	s0,0(sp)
-    8020006a:	0141                	addi	sp,sp,16
-    8020006c:	8082                	ret
+0000000080200056 <cputch>:
+    80200056:	1141                	addi	sp,sp,-16
+    80200058:	e022                	sd	s0,0(sp)
+    8020005a:	e406                	sd	ra,8(sp)
+    8020005c:	842e                	mv	s0,a1
+    8020005e:	11a000ef          	jal	ra,80200178 <cons_putc>
+    80200062:	401c                	lw	a5,0(s0)
+    80200064:	60a2                	ld	ra,8(sp)
+    80200066:	2785                	addiw	a5,a5,1
+    80200068:	c01c                	sw	a5,0(s0)
+    8020006a:	6402                	ld	s0,0(sp)
+    8020006c:	0141                	addi	sp,sp,16
+    8020006e:	8082                	ret
 
-000000008020006e <cprintf>:
-    8020006e:	711d                	addi	sp,sp,-96
-    80200070:	02810313          	addi	t1,sp,40 # 80204028 <end>
-    80200074:	8e2a                	mv	t3,a0
-    80200076:	f42e                	sd	a1,40(sp)
-    80200078:	f832                	sd	a2,48(sp)
-    8020007a:	fc36                	sd	a3,56(sp)
-    8020007c:	00000517          	auipc	a0,0x0
-    80200080:	fd850513          	addi	a0,a0,-40 # 80200054 <cputch>
-    80200084:	004c                	addi	a1,sp,4
-    80200086:	869a                	mv	a3,t1
-    80200088:	8672                	mv	a2,t3
-    8020008a:	ec06                	sd	ra,24(sp)
-    8020008c:	e0ba                	sd	a4,64(sp)
-    8020008e:	e4be                	sd	a5,72(sp)
-    80200090:	e8c2                	sd	a6,80(sp)
-    80200092:	ecc6                	sd	a7,88(sp)
-    80200094:	e41a                	sd	t1,8(sp)
-    80200096:	c202                	sw	zero,4(sp)
-    80200098:	556000ef          	jal	ra,802005ee <vprintfmt>
-    8020009c:	60e2                	ld	ra,24(sp)
-    8020009e:	4512                	lw	a0,4(sp)
-    802000a0:	6125                	addi	sp,sp,96
-    802000a2:	8082                	ret
+0000000080200070 <cprintf>:
+    80200070:	711d                	addi	sp,sp,-96
+    80200072:	02810313          	addi	t1,sp,40 # 80204028 <end>
+    80200076:	8e2a                	mv	t3,a0
+    80200078:	f42e                	sd	a1,40(sp)
+    8020007a:	f832                	sd	a2,48(sp)
+    8020007c:	fc36                	sd	a3,56(sp)
+    8020007e:	00000517          	auipc	a0,0x0
+    80200082:	fd850513          	addi	a0,a0,-40 # 80200056 <cputch>
+    80200086:	004c                	addi	a1,sp,4
+    80200088:	869a                	mv	a3,t1
+    8020008a:	8672                	mv	a2,t3
+    8020008c:	ec06                	sd	ra,24(sp)
+    8020008e:	e0ba                	sd	a4,64(sp)
+    80200090:	e4be                	sd	a5,72(sp)
+    80200092:	e8c2                	sd	a6,80(sp)
+    80200094:	ecc6                	sd	a7,88(sp)
+    80200096:	e41a                	sd	t1,8(sp)
+    80200098:	c202                	sw	zero,4(sp)
+    8020009a:	554000ef          	jal	ra,802005ee <vprintfmt>
+    8020009e:	60e2                	ld	ra,24(sp)
+    802000a0:	4512                	lw	a0,4(sp)
+    802000a2:	6125                	addi	sp,sp,96
+    802000a4:	8082                	ret
 
-00000000802000a4 <print_kerninfo>:
-    802000a4:	1141                	addi	sp,sp,-16
-    802000a6:	00001517          	auipc	a0,0x1
-    802000aa:	97250513          	addi	a0,a0,-1678 # 80200a18 <etext+0x2c>
-    802000ae:	e406                	sd	ra,8(sp)
-    802000b0:	fbfff0ef          	jal	ra,8020006e <cprintf>
-    802000b4:	00000597          	auipc	a1,0x0
-    802000b8:	f5658593          	addi	a1,a1,-170 # 8020000a <kern_init>
-    802000bc:	00001517          	auipc	a0,0x1
-    802000c0:	97c50513          	addi	a0,a0,-1668 # 80200a38 <etext+0x4c>
-    802000c4:	fabff0ef          	jal	ra,8020006e <cprintf>
-    802000c8:	00001597          	auipc	a1,0x1
-    802000cc:	92458593          	addi	a1,a1,-1756 # 802009ec <etext>
-    802000d0:	00001517          	auipc	a0,0x1
-    802000d4:	98850513          	addi	a0,a0,-1656 # 80200a58 <etext+0x6c>
-    802000d8:	f97ff0ef          	jal	ra,8020006e <cprintf>
-    802000dc:	00004597          	auipc	a1,0x4
-    802000e0:	f3458593          	addi	a1,a1,-204 # 80204010 <ticks>
-    802000e4:	00001517          	auipc	a0,0x1
-    802000e8:	99450513          	addi	a0,a0,-1644 # 80200a78 <etext+0x8c>
-    802000ec:	f83ff0ef          	jal	ra,8020006e <cprintf>
-    802000f0:	00004597          	auipc	a1,0x4
-    802000f4:	f3858593          	addi	a1,a1,-200 # 80204028 <end>
-    802000f8:	00001517          	auipc	a0,0x1
-    802000fc:	9a050513          	addi	a0,a0,-1632 # 80200a98 <etext+0xac>
-    80200100:	f6fff0ef          	jal	ra,8020006e <cprintf>
-    80200104:	00004597          	auipc	a1,0x4
-    80200108:	32358593          	addi	a1,a1,803 # 80204427 <end+0x3ff>
-    8020010c:	00000797          	auipc	a5,0x0
-    80200110:	efe78793          	addi	a5,a5,-258 # 8020000a <kern_init>
-    80200114:	40f587b3          	sub	a5,a1,a5
-    80200118:	43f7d593          	srai	a1,a5,0x3f
-    8020011c:	60a2                	ld	ra,8(sp)
-    8020011e:	3ff5f593          	andi	a1,a1,1023
-    80200122:	95be                	add	a1,a1,a5
-    80200124:	85a9                	srai	a1,a1,0xa
-    80200126:	00001517          	auipc	a0,0x1
-    8020012a:	99250513          	addi	a0,a0,-1646 # 80200ab8 <etext+0xcc>
-    8020012e:	0141                	addi	sp,sp,16
-    80200130:	bf3d                	j	8020006e <cprintf>
+00000000802000a6 <print_kerninfo>:
+    802000a6:	1141                	addi	sp,sp,-16
+    802000a8:	00001517          	auipc	a0,0x1
+    802000ac:	97050513          	addi	a0,a0,-1680 # 80200a18 <etext+0x2c>
+    802000b0:	e406                	sd	ra,8(sp)
+    802000b2:	fbfff0ef          	jal	ra,80200070 <cprintf>
+    802000b6:	00000597          	auipc	a1,0x0
+    802000ba:	f5458593          	addi	a1,a1,-172 # 8020000a <kern_init>
+    802000be:	00001517          	auipc	a0,0x1
+    802000c2:	97a50513          	addi	a0,a0,-1670 # 80200a38 <etext+0x4c>
+    802000c6:	fabff0ef          	jal	ra,80200070 <cprintf>
+    802000ca:	00001597          	auipc	a1,0x1
+    802000ce:	92258593          	addi	a1,a1,-1758 # 802009ec <etext>
+    802000d2:	00001517          	auipc	a0,0x1
+    802000d6:	98650513          	addi	a0,a0,-1658 # 80200a58 <etext+0x6c>
+    802000da:	f97ff0ef          	jal	ra,80200070 <cprintf>
+    802000de:	00004597          	auipc	a1,0x4
+    802000e2:	f3258593          	addi	a1,a1,-206 # 80204010 <ticks>
+    802000e6:	00001517          	auipc	a0,0x1
+    802000ea:	99250513          	addi	a0,a0,-1646 # 80200a78 <etext+0x8c>
+    802000ee:	f83ff0ef          	jal	ra,80200070 <cprintf>
+    802000f2:	00004597          	auipc	a1,0x4
+    802000f6:	f3658593          	addi	a1,a1,-202 # 80204028 <end>
+    802000fa:	00001517          	auipc	a0,0x1
+    802000fe:	99e50513          	addi	a0,a0,-1634 # 80200a98 <etext+0xac>
+    80200102:	f6fff0ef          	jal	ra,80200070 <cprintf>
+    80200106:	00004597          	auipc	a1,0x4
+    8020010a:	32158593          	addi	a1,a1,801 # 80204427 <end+0x3ff>
+    8020010e:	00000797          	auipc	a5,0x0
+    80200112:	efc78793          	addi	a5,a5,-260 # 8020000a <kern_init>
+    80200116:	40f587b3          	sub	a5,a1,a5
+    8020011a:	43f7d593          	srai	a1,a5,0x3f
+    8020011e:	60a2                	ld	ra,8(sp)
+    80200120:	3ff5f593          	andi	a1,a1,1023
+    80200124:	95be                	add	a1,a1,a5
+    80200126:	85a9                	srai	a1,a1,0xa
+    80200128:	00001517          	auipc	a0,0x1
+    8020012c:	99050513          	addi	a0,a0,-1648 # 80200ab8 <etext+0xcc>
+    80200130:	0141                	addi	sp,sp,16
+    80200132:	bf3d                	j	80200070 <cprintf>
 
-0000000080200132 <clock_init>:
-    80200132:	1141                	addi	sp,sp,-16
-    80200134:	e406                	sd	ra,8(sp)
-    80200136:	02000793          	li	a5,32
-    8020013a:	1047a7f3          	csrrs	a5,sie,a5
-    8020013e:	c0102573          	rdtime	a0
-    80200142:	67e1                	lui	a5,0x18
-    80200144:	6a078793          	addi	a5,a5,1696 # 186a0 <kern_entry-0x801e7960>
-    80200148:	953e                	add	a0,a0,a5
-    8020014a:	041000ef          	jal	ra,8020098a <sbi_set_timer>
-    8020014e:	60a2                	ld	ra,8(sp)
-    80200150:	00004797          	auipc	a5,0x4
-    80200154:	ec07b023          	sd	zero,-320(a5) # 80204010 <ticks>
-    80200158:	00001517          	auipc	a0,0x1
-    8020015c:	99050513          	addi	a0,a0,-1648 # 80200ae8 <etext+0xfc>
-    80200160:	0141                	addi	sp,sp,16
-    80200162:	b731                	j	8020006e <cprintf>
+0000000080200134 <clock_init>:
+    80200134:	1141                	addi	sp,sp,-16
+    80200136:	e406                	sd	ra,8(sp)
+    80200138:	02000793          	li	a5,32
+    8020013c:	1047a7f3          	csrrs	a5,sie,a5
+    80200140:	c0102573          	rdtime	a0
+    80200144:	67e1                	lui	a5,0x18
+    80200146:	6a078793          	addi	a5,a5,1696 # 186a0 <kern_entry-0x801e7960>
+    8020014a:	953e                	add	a0,a0,a5
+    8020014c:	03f000ef          	jal	ra,8020098a <sbi_set_timer>
+    80200150:	60a2                	ld	ra,8(sp)
+    80200152:	00004797          	auipc	a5,0x4
+    80200156:	ea07bf23          	sd	zero,-322(a5) # 80204010 <ticks>
+    8020015a:	00001517          	auipc	a0,0x1
+    8020015e:	98e50513          	addi	a0,a0,-1650 # 80200ae8 <etext+0xfc>
+    80200162:	0141                	addi	sp,sp,16
+    80200164:	b731                	j	80200070 <cprintf>
 
-0000000080200164 <clock_set_next_event>:
-    80200164:	c0102573          	rdtime	a0
-    80200168:	67e1                	lui	a5,0x18
-    8020016a:	6a078793          	addi	a5,a5,1696 # 186a0 <kern_entry-0x801e7960>
-    8020016e:	953e                	add	a0,a0,a5
-    80200170:	01b0006f          	j	8020098a <sbi_set_timer>
+0000000080200166 <clock_set_next_event>:
+    80200166:	c0102573          	rdtime	a0
+    8020016a:	67e1                	lui	a5,0x18
+    8020016c:	6a078793          	addi	a5,a5,1696 # 186a0 <kern_entry-0x801e7960>
+    80200170:	953e                	add	a0,a0,a5
+    80200172:	0190006f          	j	8020098a <sbi_set_timer>
 
-0000000080200174 <cons_init>:
-    80200174:	8082                	ret
+0000000080200176 <cons_init>:
+    80200176:	8082                	ret
 
-0000000080200176 <cons_putc>:
-    80200176:	0ff57513          	zext.b	a0,a0
-    8020017a:	7f60006f          	j	80200970 <sbi_console_putchar>
+0000000080200178 <cons_putc>:
+    80200178:	0ff57513          	zext.b	a0,a0
+    8020017c:	7f40006f          	j	80200970 <sbi_console_putchar>
 
-000000008020017e <intr_enable>:
-    8020017e:	100167f3          	csrrsi	a5,sstatus,2
-    80200182:	8082                	ret
+0000000080200180 <intr_enable>:
+    80200180:	100167f3          	csrrsi	a5,sstatus,2
+    80200184:	8082                	ret
 
-0000000080200184 <idt_init>:
- */
-void idt_init(void) {
-    extern void __alltraps(void);
-    /* Set sscratch register to 0, indicating to exception vector that we are
-     * presently executing in the kernel */
-    write_csr(sscratch, 0);
-    80200184:	14005073          	csrwi	sscratch,0
-    /* Set the exception vector address */
-    write_csr(stvec, &__alltraps);
-    80200188:	00000797          	auipc	a5,0x0
-    8020018c:	34478793          	addi	a5,a5,836 # 802004cc <__alltraps>
-    80200190:	10579073          	csrw	stvec,a5
-}
-    80200194:	8082                	ret
+0000000080200186 <idt_init>:
+    80200186:	14005073          	csrwi	sscratch,0
+    8020018a:	00000797          	auipc	a5,0x0
+    8020018e:	34278793          	addi	a5,a5,834 # 802004cc <__alltraps>
+    80200192:	10579073          	csrw	stvec,a5
+    80200196:	8082                	ret
 
-0000000080200196 <print_regs>:
-    cprintf("  badvaddr 0x%08x\n", tf->badvaddr);
-    cprintf("  cause    0x%08x\n", tf->cause);
-}
+0000000080200198 <print_regs>:
+    80200198:	610c                	ld	a1,0(a0)
+    8020019a:	1141                	addi	sp,sp,-16
+    8020019c:	e022                	sd	s0,0(sp)
+    8020019e:	842a                	mv	s0,a0
+    802001a0:	00001517          	auipc	a0,0x1
+    802001a4:	96850513          	addi	a0,a0,-1688 # 80200b08 <etext+0x11c>
+    802001a8:	e406                	sd	ra,8(sp)
+    802001aa:	ec7ff0ef          	jal	ra,80200070 <cprintf>
+    802001ae:	640c                	ld	a1,8(s0)
+    802001b0:	00001517          	auipc	a0,0x1
+    802001b4:	97050513          	addi	a0,a0,-1680 # 80200b20 <etext+0x134>
+    802001b8:	eb9ff0ef          	jal	ra,80200070 <cprintf>
+    802001bc:	680c                	ld	a1,16(s0)
+    802001be:	00001517          	auipc	a0,0x1
+    802001c2:	97a50513          	addi	a0,a0,-1670 # 80200b38 <etext+0x14c>
+    802001c6:	eabff0ef          	jal	ra,80200070 <cprintf>
+    802001ca:	6c0c                	ld	a1,24(s0)
+    802001cc:	00001517          	auipc	a0,0x1
+    802001d0:	98450513          	addi	a0,a0,-1660 # 80200b50 <etext+0x164>
+    802001d4:	e9dff0ef          	jal	ra,80200070 <cprintf>
+    802001d8:	700c                	ld	a1,32(s0)
+    802001da:	00001517          	auipc	a0,0x1
+    802001de:	98e50513          	addi	a0,a0,-1650 # 80200b68 <etext+0x17c>
+    802001e2:	e8fff0ef          	jal	ra,80200070 <cprintf>
+    802001e6:	740c                	ld	a1,40(s0)
+    802001e8:	00001517          	auipc	a0,0x1
+    802001ec:	99850513          	addi	a0,a0,-1640 # 80200b80 <etext+0x194>
+    802001f0:	e81ff0ef          	jal	ra,80200070 <cprintf>
+    802001f4:	780c                	ld	a1,48(s0)
+    802001f6:	00001517          	auipc	a0,0x1
+    802001fa:	9a250513          	addi	a0,a0,-1630 # 80200b98 <etext+0x1ac>
+    802001fe:	e73ff0ef          	jal	ra,80200070 <cprintf>
+    80200202:	7c0c                	ld	a1,56(s0)
+    80200204:	00001517          	auipc	a0,0x1
+    80200208:	9ac50513          	addi	a0,a0,-1620 # 80200bb0 <etext+0x1c4>
+    8020020c:	e65ff0ef          	jal	ra,80200070 <cprintf>
+    80200210:	602c                	ld	a1,64(s0)
+    80200212:	00001517          	auipc	a0,0x1
+    80200216:	9b650513          	addi	a0,a0,-1610 # 80200bc8 <etext+0x1dc>
+    8020021a:	e57ff0ef          	jal	ra,80200070 <cprintf>
+    8020021e:	642c                	ld	a1,72(s0)
+    80200220:	00001517          	auipc	a0,0x1
+    80200224:	9c050513          	addi	a0,a0,-1600 # 80200be0 <etext+0x1f4>
+    80200228:	e49ff0ef          	jal	ra,80200070 <cprintf>
+    8020022c:	682c                	ld	a1,80(s0)
+    8020022e:	00001517          	auipc	a0,0x1
+    80200232:	9ca50513          	addi	a0,a0,-1590 # 80200bf8 <etext+0x20c>
+    80200236:	e3bff0ef          	jal	ra,80200070 <cprintf>
+    8020023a:	6c2c                	ld	a1,88(s0)
+    8020023c:	00001517          	auipc	a0,0x1
+    80200240:	9d450513          	addi	a0,a0,-1580 # 80200c10 <etext+0x224>
+    80200244:	e2dff0ef          	jal	ra,80200070 <cprintf>
+    80200248:	702c                	ld	a1,96(s0)
+    8020024a:	00001517          	auipc	a0,0x1
+    8020024e:	9de50513          	addi	a0,a0,-1570 # 80200c28 <etext+0x23c>
+    80200252:	e1fff0ef          	jal	ra,80200070 <cprintf>
+    80200256:	742c                	ld	a1,104(s0)
+    80200258:	00001517          	auipc	a0,0x1
+    8020025c:	9e850513          	addi	a0,a0,-1560 # 80200c40 <etext+0x254>
+    80200260:	e11ff0ef          	jal	ra,80200070 <cprintf>
+    80200264:	782c                	ld	a1,112(s0)
+    80200266:	00001517          	auipc	a0,0x1
+    8020026a:	9f250513          	addi	a0,a0,-1550 # 80200c58 <etext+0x26c>
+    8020026e:	e03ff0ef          	jal	ra,80200070 <cprintf>
+    80200272:	7c2c                	ld	a1,120(s0)
+    80200274:	00001517          	auipc	a0,0x1
+    80200278:	9fc50513          	addi	a0,a0,-1540 # 80200c70 <etext+0x284>
+    8020027c:	df5ff0ef          	jal	ra,80200070 <cprintf>
+    80200280:	604c                	ld	a1,128(s0)
+    80200282:	00001517          	auipc	a0,0x1
+    80200286:	a0650513          	addi	a0,a0,-1530 # 80200c88 <etext+0x29c>
+    8020028a:	de7ff0ef          	jal	ra,80200070 <cprintf>
+    8020028e:	644c                	ld	a1,136(s0)
+    80200290:	00001517          	auipc	a0,0x1
+    80200294:	a1050513          	addi	a0,a0,-1520 # 80200ca0 <etext+0x2b4>
+    80200298:	dd9ff0ef          	jal	ra,80200070 <cprintf>
+    8020029c:	684c                	ld	a1,144(s0)
+    8020029e:	00001517          	auipc	a0,0x1
+    802002a2:	a1a50513          	addi	a0,a0,-1510 # 80200cb8 <etext+0x2cc>
+    802002a6:	dcbff0ef          	jal	ra,80200070 <cprintf>
+    802002aa:	6c4c                	ld	a1,152(s0)
+    802002ac:	00001517          	auipc	a0,0x1
+    802002b0:	a2450513          	addi	a0,a0,-1500 # 80200cd0 <etext+0x2e4>
+    802002b4:	dbdff0ef          	jal	ra,80200070 <cprintf>
+    802002b8:	704c                	ld	a1,160(s0)
+    802002ba:	00001517          	auipc	a0,0x1
+    802002be:	a2e50513          	addi	a0,a0,-1490 # 80200ce8 <etext+0x2fc>
+    802002c2:	dafff0ef          	jal	ra,80200070 <cprintf>
+    802002c6:	744c                	ld	a1,168(s0)
+    802002c8:	00001517          	auipc	a0,0x1
+    802002cc:	a3850513          	addi	a0,a0,-1480 # 80200d00 <etext+0x314>
+    802002d0:	da1ff0ef          	jal	ra,80200070 <cprintf>
+    802002d4:	784c                	ld	a1,176(s0)
+    802002d6:	00001517          	auipc	a0,0x1
+    802002da:	a4250513          	addi	a0,a0,-1470 # 80200d18 <etext+0x32c>
+    802002de:	d93ff0ef          	jal	ra,80200070 <cprintf>
+    802002e2:	7c4c                	ld	a1,184(s0)
+    802002e4:	00001517          	auipc	a0,0x1
+    802002e8:	a4c50513          	addi	a0,a0,-1460 # 80200d30 <etext+0x344>
+    802002ec:	d85ff0ef          	jal	ra,80200070 <cprintf>
+    802002f0:	606c                	ld	a1,192(s0)
+    802002f2:	00001517          	auipc	a0,0x1
+    802002f6:	a5650513          	addi	a0,a0,-1450 # 80200d48 <etext+0x35c>
+    802002fa:	d77ff0ef          	jal	ra,80200070 <cprintf>
+    802002fe:	646c                	ld	a1,200(s0)
+    80200300:	00001517          	auipc	a0,0x1
+    80200304:	a6050513          	addi	a0,a0,-1440 # 80200d60 <etext+0x374>
+    80200308:	d69ff0ef          	jal	ra,80200070 <cprintf>
+    8020030c:	686c                	ld	a1,208(s0)
+    8020030e:	00001517          	auipc	a0,0x1
+    80200312:	a6a50513          	addi	a0,a0,-1430 # 80200d78 <etext+0x38c>
+    80200316:	d5bff0ef          	jal	ra,80200070 <cprintf>
+    8020031a:	6c6c                	ld	a1,216(s0)
+    8020031c:	00001517          	auipc	a0,0x1
+    80200320:	a7450513          	addi	a0,a0,-1420 # 80200d90 <etext+0x3a4>
+    80200324:	d4dff0ef          	jal	ra,80200070 <cprintf>
+    80200328:	706c                	ld	a1,224(s0)
+    8020032a:	00001517          	auipc	a0,0x1
+    8020032e:	a7e50513          	addi	a0,a0,-1410 # 80200da8 <etext+0x3bc>
+    80200332:	d3fff0ef          	jal	ra,80200070 <cprintf>
+    80200336:	746c                	ld	a1,232(s0)
+    80200338:	00001517          	auipc	a0,0x1
+    8020033c:	a8850513          	addi	a0,a0,-1400 # 80200dc0 <etext+0x3d4>
+    80200340:	d31ff0ef          	jal	ra,80200070 <cprintf>
+    80200344:	786c                	ld	a1,240(s0)
+    80200346:	00001517          	auipc	a0,0x1
+    8020034a:	a9250513          	addi	a0,a0,-1390 # 80200dd8 <etext+0x3ec>
+    8020034e:	d23ff0ef          	jal	ra,80200070 <cprintf>
+    80200352:	7c6c                	ld	a1,248(s0)
+    80200354:	6402                	ld	s0,0(sp)
+    80200356:	60a2                	ld	ra,8(sp)
+    80200358:	00001517          	auipc	a0,0x1
+    8020035c:	a9850513          	addi	a0,a0,-1384 # 80200df0 <etext+0x404>
+    80200360:	0141                	addi	sp,sp,16
+    80200362:	b339                	j	80200070 <cprintf>
 
-void print_regs(struct pushregs *gpr) {
-    cprintf("  zero     0x%08x\n", gpr->zero);
-    80200196:	610c                	ld	a1,0(a0)
-void print_regs(struct pushregs *gpr) {
-    80200198:	1141                	addi	sp,sp,-16
-    8020019a:	e022                	sd	s0,0(sp)
-    8020019c:	842a                	mv	s0,a0
-    cprintf("  zero     0x%08x\n", gpr->zero);
-    8020019e:	00001517          	auipc	a0,0x1
-    802001a2:	96a50513          	addi	a0,a0,-1686 # 80200b08 <etext+0x11c>
-void print_regs(struct pushregs *gpr) {
-    802001a6:	e406                	sd	ra,8(sp)
-    cprintf("  zero     0x%08x\n", gpr->zero);
-    802001a8:	ec7ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  ra       0x%08x\n", gpr->ra);
-    802001ac:	640c                	ld	a1,8(s0)
-    802001ae:	00001517          	auipc	a0,0x1
-    802001b2:	97250513          	addi	a0,a0,-1678 # 80200b20 <etext+0x134>
-    802001b6:	eb9ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  sp       0x%08x\n", gpr->sp);
-    802001ba:	680c                	ld	a1,16(s0)
-    802001bc:	00001517          	auipc	a0,0x1
-    802001c0:	97c50513          	addi	a0,a0,-1668 # 80200b38 <etext+0x14c>
-    802001c4:	eabff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  gp       0x%08x\n", gpr->gp);
-    802001c8:	6c0c                	ld	a1,24(s0)
-    802001ca:	00001517          	auipc	a0,0x1
-    802001ce:	98650513          	addi	a0,a0,-1658 # 80200b50 <etext+0x164>
-    802001d2:	e9dff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  tp       0x%08x\n", gpr->tp);
-    802001d6:	700c                	ld	a1,32(s0)
-    802001d8:	00001517          	auipc	a0,0x1
-    802001dc:	99050513          	addi	a0,a0,-1648 # 80200b68 <etext+0x17c>
-    802001e0:	e8fff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  t0       0x%08x\n", gpr->t0);
-    802001e4:	740c                	ld	a1,40(s0)
-    802001e6:	00001517          	auipc	a0,0x1
-    802001ea:	99a50513          	addi	a0,a0,-1638 # 80200b80 <etext+0x194>
-    802001ee:	e81ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  t1       0x%08x\n", gpr->t1);
-    802001f2:	780c                	ld	a1,48(s0)
-    802001f4:	00001517          	auipc	a0,0x1
-    802001f8:	9a450513          	addi	a0,a0,-1628 # 80200b98 <etext+0x1ac>
-    802001fc:	e73ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  t2       0x%08x\n", gpr->t2);
-    80200200:	7c0c                	ld	a1,56(s0)
-    80200202:	00001517          	auipc	a0,0x1
-    80200206:	9ae50513          	addi	a0,a0,-1618 # 80200bb0 <etext+0x1c4>
-    8020020a:	e65ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s0       0x%08x\n", gpr->s0);
-    8020020e:	602c                	ld	a1,64(s0)
-    80200210:	00001517          	auipc	a0,0x1
-    80200214:	9b850513          	addi	a0,a0,-1608 # 80200bc8 <etext+0x1dc>
-    80200218:	e57ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s1       0x%08x\n", gpr->s1);
-    8020021c:	642c                	ld	a1,72(s0)
-    8020021e:	00001517          	auipc	a0,0x1
-    80200222:	9c250513          	addi	a0,a0,-1598 # 80200be0 <etext+0x1f4>
-    80200226:	e49ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  a0       0x%08x\n", gpr->a0);
-    8020022a:	682c                	ld	a1,80(s0)
-    8020022c:	00001517          	auipc	a0,0x1
-    80200230:	9cc50513          	addi	a0,a0,-1588 # 80200bf8 <etext+0x20c>
-    80200234:	e3bff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  a1       0x%08x\n", gpr->a1);
-    80200238:	6c2c                	ld	a1,88(s0)
-    8020023a:	00001517          	auipc	a0,0x1
-    8020023e:	9d650513          	addi	a0,a0,-1578 # 80200c10 <etext+0x224>
-    80200242:	e2dff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  a2       0x%08x\n", gpr->a2);
-    80200246:	702c                	ld	a1,96(s0)
-    80200248:	00001517          	auipc	a0,0x1
-    8020024c:	9e050513          	addi	a0,a0,-1568 # 80200c28 <etext+0x23c>
-    80200250:	e1fff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  a3       0x%08x\n", gpr->a3);
-    80200254:	742c                	ld	a1,104(s0)
-    80200256:	00001517          	auipc	a0,0x1
-    8020025a:	9ea50513          	addi	a0,a0,-1558 # 80200c40 <etext+0x254>
-    8020025e:	e11ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  a4       0x%08x\n", gpr->a4);
-    80200262:	782c                	ld	a1,112(s0)
-    80200264:	00001517          	auipc	a0,0x1
-    80200268:	9f450513          	addi	a0,a0,-1548 # 80200c58 <etext+0x26c>
-    8020026c:	e03ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  a5       0x%08x\n", gpr->a5);
-    80200270:	7c2c                	ld	a1,120(s0)
-    80200272:	00001517          	auipc	a0,0x1
-    80200276:	9fe50513          	addi	a0,a0,-1538 # 80200c70 <etext+0x284>
-    8020027a:	df5ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  a6       0x%08x\n", gpr->a6);
-    8020027e:	604c                	ld	a1,128(s0)
-    80200280:	00001517          	auipc	a0,0x1
-    80200284:	a0850513          	addi	a0,a0,-1528 # 80200c88 <etext+0x29c>
-    80200288:	de7ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  a7       0x%08x\n", gpr->a7);
-    8020028c:	644c                	ld	a1,136(s0)
-    8020028e:	00001517          	auipc	a0,0x1
-    80200292:	a1250513          	addi	a0,a0,-1518 # 80200ca0 <etext+0x2b4>
-    80200296:	dd9ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s2       0x%08x\n", gpr->s2);
-    8020029a:	684c                	ld	a1,144(s0)
-    8020029c:	00001517          	auipc	a0,0x1
-    802002a0:	a1c50513          	addi	a0,a0,-1508 # 80200cb8 <etext+0x2cc>
-    802002a4:	dcbff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s3       0x%08x\n", gpr->s3);
-    802002a8:	6c4c                	ld	a1,152(s0)
-    802002aa:	00001517          	auipc	a0,0x1
-    802002ae:	a2650513          	addi	a0,a0,-1498 # 80200cd0 <etext+0x2e4>
-    802002b2:	dbdff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s4       0x%08x\n", gpr->s4);
-    802002b6:	704c                	ld	a1,160(s0)
-    802002b8:	00001517          	auipc	a0,0x1
-    802002bc:	a3050513          	addi	a0,a0,-1488 # 80200ce8 <etext+0x2fc>
-    802002c0:	dafff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s5       0x%08x\n", gpr->s5);
-    802002c4:	744c                	ld	a1,168(s0)
-    802002c6:	00001517          	auipc	a0,0x1
-    802002ca:	a3a50513          	addi	a0,a0,-1478 # 80200d00 <etext+0x314>
-    802002ce:	da1ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s6       0x%08x\n", gpr->s6);
-    802002d2:	784c                	ld	a1,176(s0)
-    802002d4:	00001517          	auipc	a0,0x1
-    802002d8:	a4450513          	addi	a0,a0,-1468 # 80200d18 <etext+0x32c>
-    802002dc:	d93ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s7       0x%08x\n", gpr->s7);
-    802002e0:	7c4c                	ld	a1,184(s0)
-    802002e2:	00001517          	auipc	a0,0x1
-    802002e6:	a4e50513          	addi	a0,a0,-1458 # 80200d30 <etext+0x344>
-    802002ea:	d85ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s8       0x%08x\n", gpr->s8);
-    802002ee:	606c                	ld	a1,192(s0)
-    802002f0:	00001517          	auipc	a0,0x1
-    802002f4:	a5850513          	addi	a0,a0,-1448 # 80200d48 <etext+0x35c>
-    802002f8:	d77ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s9       0x%08x\n", gpr->s9);
-    802002fc:	646c                	ld	a1,200(s0)
-    802002fe:	00001517          	auipc	a0,0x1
-    80200302:	a6250513          	addi	a0,a0,-1438 # 80200d60 <etext+0x374>
-    80200306:	d69ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s10      0x%08x\n", gpr->s10);
-    8020030a:	686c                	ld	a1,208(s0)
-    8020030c:	00001517          	auipc	a0,0x1
-    80200310:	a6c50513          	addi	a0,a0,-1428 # 80200d78 <etext+0x38c>
-    80200314:	d5bff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  s11      0x%08x\n", gpr->s11);
-    80200318:	6c6c                	ld	a1,216(s0)
-    8020031a:	00001517          	auipc	a0,0x1
-    8020031e:	a7650513          	addi	a0,a0,-1418 # 80200d90 <etext+0x3a4>
-    80200322:	d4dff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  t3       0x%08x\n", gpr->t3);
-    80200326:	706c                	ld	a1,224(s0)
-    80200328:	00001517          	auipc	a0,0x1
-    8020032c:	a8050513          	addi	a0,a0,-1408 # 80200da8 <etext+0x3bc>
-    80200330:	d3fff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  t4       0x%08x\n", gpr->t4);
-    80200334:	746c                	ld	a1,232(s0)
-    80200336:	00001517          	auipc	a0,0x1
-    8020033a:	a8a50513          	addi	a0,a0,-1398 # 80200dc0 <etext+0x3d4>
-    8020033e:	d31ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  t5       0x%08x\n", gpr->t5);
-    80200342:	786c                	ld	a1,240(s0)
-    80200344:	00001517          	auipc	a0,0x1
-    80200348:	a9450513          	addi	a0,a0,-1388 # 80200dd8 <etext+0x3ec>
-    8020034c:	d23ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  t6       0x%08x\n", gpr->t6);
-    80200350:	7c6c                	ld	a1,248(s0)
-}
-    80200352:	6402                	ld	s0,0(sp)
-    80200354:	60a2                	ld	ra,8(sp)
-    cprintf("  t6       0x%08x\n", gpr->t6);
-    80200356:	00001517          	auipc	a0,0x1
-    8020035a:	a9a50513          	addi	a0,a0,-1382 # 80200df0 <etext+0x404>
-}
-    8020035e:	0141                	addi	sp,sp,16
-    cprintf("  t6       0x%08x\n", gpr->t6);
-    80200360:	b339                	j	8020006e <cprintf>
+0000000080200364 <print_trapframe>:
+    80200364:	1141                	addi	sp,sp,-16
+    80200366:	e022                	sd	s0,0(sp)
+    80200368:	85aa                	mv	a1,a0
+    8020036a:	842a                	mv	s0,a0
+    8020036c:	00001517          	auipc	a0,0x1
+    80200370:	a9c50513          	addi	a0,a0,-1380 # 80200e08 <etext+0x41c>
+    80200374:	e406                	sd	ra,8(sp)
+    80200376:	cfbff0ef          	jal	ra,80200070 <cprintf>
+    8020037a:	8522                	mv	a0,s0
+    8020037c:	e1dff0ef          	jal	ra,80200198 <print_regs>
+    80200380:	10043583          	ld	a1,256(s0)
+    80200384:	00001517          	auipc	a0,0x1
+    80200388:	a9c50513          	addi	a0,a0,-1380 # 80200e20 <etext+0x434>
+    8020038c:	ce5ff0ef          	jal	ra,80200070 <cprintf>
+    80200390:	10843583          	ld	a1,264(s0)
+    80200394:	00001517          	auipc	a0,0x1
+    80200398:	aa450513          	addi	a0,a0,-1372 # 80200e38 <etext+0x44c>
+    8020039c:	cd5ff0ef          	jal	ra,80200070 <cprintf>
+    802003a0:	11043583          	ld	a1,272(s0)
+    802003a4:	00001517          	auipc	a0,0x1
+    802003a8:	aac50513          	addi	a0,a0,-1364 # 80200e50 <etext+0x464>
+    802003ac:	cc5ff0ef          	jal	ra,80200070 <cprintf>
+    802003b0:	11843583          	ld	a1,280(s0)
+    802003b4:	6402                	ld	s0,0(sp)
+    802003b6:	60a2                	ld	ra,8(sp)
+    802003b8:	00001517          	auipc	a0,0x1
+    802003bc:	ab050513          	addi	a0,a0,-1360 # 80200e68 <etext+0x47c>
+    802003c0:	0141                	addi	sp,sp,16
+    802003c2:	b17d                	j	80200070 <cprintf>
 
-0000000080200362 <print_trapframe>:
-void print_trapframe(struct trapframe *tf) {
-    80200362:	1141                	addi	sp,sp,-16
-    80200364:	e022                	sd	s0,0(sp)
-    cprintf("trapframe at %p\n", tf);
-    80200366:	85aa                	mv	a1,a0
-void print_trapframe(struct trapframe *tf) {
-    80200368:	842a                	mv	s0,a0
-    cprintf("trapframe at %p\n", tf);
-    8020036a:	00001517          	auipc	a0,0x1
-    8020036e:	a9e50513          	addi	a0,a0,-1378 # 80200e08 <etext+0x41c>
-void print_trapframe(struct trapframe *tf) {
-    80200372:	e406                	sd	ra,8(sp)
-    cprintf("trapframe at %p\n", tf);
-    80200374:	cfbff0ef          	jal	ra,8020006e <cprintf>
-    print_regs(&tf->gpr);
-    80200378:	8522                	mv	a0,s0
-    8020037a:	e1dff0ef          	jal	ra,80200196 <print_regs>
-    cprintf("  status   0x%08x\n", tf->status);
-    8020037e:	10043583          	ld	a1,256(s0)
-    80200382:	00001517          	auipc	a0,0x1
-    80200386:	a9e50513          	addi	a0,a0,-1378 # 80200e20 <etext+0x434>
-    8020038a:	ce5ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  epc      0x%08x\n", tf->epc);
-    8020038e:	10843583          	ld	a1,264(s0)
-    80200392:	00001517          	auipc	a0,0x1
-    80200396:	aa650513          	addi	a0,a0,-1370 # 80200e38 <etext+0x44c>
-    8020039a:	cd5ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  badvaddr 0x%08x\n", tf->badvaddr);
-    8020039e:	11043583          	ld	a1,272(s0)
-    802003a2:	00001517          	auipc	a0,0x1
-    802003a6:	aae50513          	addi	a0,a0,-1362 # 80200e50 <etext+0x464>
-    802003aa:	cc5ff0ef          	jal	ra,8020006e <cprintf>
-    cprintf("  cause    0x%08x\n", tf->cause);
-    802003ae:	11843583          	ld	a1,280(s0)
-}
-    802003b2:	6402                	ld	s0,0(sp)
-    802003b4:	60a2                	ld	ra,8(sp)
-    cprintf("  cause    0x%08x\n", tf->cause);
-    802003b6:	00001517          	auipc	a0,0x1
-    802003ba:	ab250513          	addi	a0,a0,-1358 # 80200e68 <etext+0x47c>
-}
-    802003be:	0141                	addi	sp,sp,16
-    cprintf("  cause    0x%08x\n", tf->cause);
-    802003c0:	b17d                	j	8020006e <cprintf>
+00000000802003c4 <interrupt_handler>:
+    802003c4:	11853783          	ld	a5,280(a0)
+    802003c8:	472d                	li	a4,11
+    802003ca:	0786                	slli	a5,a5,0x1
+    802003cc:	8385                	srli	a5,a5,0x1
+    802003ce:	06f76763          	bltu	a4,a5,8020043c <interrupt_handler+0x78>
+    802003d2:	00001717          	auipc	a4,0x1
+    802003d6:	b5e70713          	addi	a4,a4,-1186 # 80200f30 <etext+0x544>
+    802003da:	078a                	slli	a5,a5,0x2
+    802003dc:	97ba                	add	a5,a5,a4
+    802003de:	439c                	lw	a5,0(a5)
+    802003e0:	97ba                	add	a5,a5,a4
+    802003e2:	8782                	jr	a5
+    802003e4:	00001517          	auipc	a0,0x1
+    802003e8:	afc50513          	addi	a0,a0,-1284 # 80200ee0 <etext+0x4f4>
+    802003ec:	b151                	j	80200070 <cprintf>
+    802003ee:	00001517          	auipc	a0,0x1
+    802003f2:	ad250513          	addi	a0,a0,-1326 # 80200ec0 <etext+0x4d4>
+    802003f6:	b9ad                	j	80200070 <cprintf>
+    802003f8:	00001517          	auipc	a0,0x1
+    802003fc:	a8850513          	addi	a0,a0,-1400 # 80200e80 <etext+0x494>
+    80200400:	b985                	j	80200070 <cprintf>
+    80200402:	00001517          	auipc	a0,0x1
+    80200406:	a9e50513          	addi	a0,a0,-1378 # 80200ea0 <etext+0x4b4>
+    8020040a:	b19d                	j	80200070 <cprintf>
+    8020040c:	1141                	addi	sp,sp,-16
+    8020040e:	e406                	sd	ra,8(sp)
+    80200410:	d57ff0ef          	jal	ra,80200166 <clock_set_next_event>
+    80200414:	00004797          	auipc	a5,0x4
+    80200418:	bfc78793          	addi	a5,a5,-1028 # 80204010 <ticks>
+    8020041c:	6398                	ld	a4,0(a5)
+    8020041e:	06400693          	li	a3,100
+    80200422:	0705                	addi	a4,a4,1
+    80200424:	e398                	sd	a4,0(a5)
+    80200426:	639c                	ld	a5,0(a5)
+    80200428:	00d78b63          	beq	a5,a3,8020043e <interrupt_handler+0x7a>
+    8020042c:	60a2                	ld	ra,8(sp)
+    8020042e:	0141                	addi	sp,sp,16
+    80200430:	8082                	ret
+    80200432:	00001517          	auipc	a0,0x1
+    80200436:	ade50513          	addi	a0,a0,-1314 # 80200f10 <etext+0x524>
+    8020043a:	b91d                	j	80200070 <cprintf>
+    8020043c:	b725                	j	80200364 <print_trapframe>
+    8020043e:	00001517          	auipc	a0,0x1
+    80200442:	ac250513          	addi	a0,a0,-1342 # 80200f00 <etext+0x514>
+    80200446:	c2bff0ef          	jal	ra,80200070 <cprintf>
+    8020044a:	00004797          	auipc	a5,0x4
+    8020044e:	bc07b323          	sd	zero,-1082(a5) # 80204010 <ticks>
+    80200452:	00004797          	auipc	a5,0x4
+    80200456:	bc678793          	addi	a5,a5,-1082 # 80204018 <num>
+    8020045a:	6398                	ld	a4,0(a5)
+    8020045c:	46a9                	li	a3,10
+    8020045e:	0705                	addi	a4,a4,1
+    80200460:	e398                	sd	a4,0(a5)
+    80200462:	639c                	ld	a5,0(a5)
+    80200464:	fcd794e3          	bne	a5,a3,8020042c <interrupt_handler+0x68>
+    80200468:	60a2                	ld	ra,8(sp)
+    8020046a:	0141                	addi	sp,sp,16
+    8020046c:	ab25                	j	802009a4 <sbi_shutdown>
 
-00000000802003c2 <interrupt_handler>:
-
-void interrupt_handler(struct trapframe *tf) {
-    intptr_t cause = (tf->cause << 1) >> 1;
-    802003c2:	11853783          	ld	a5,280(a0)
-    802003c6:	472d                	li	a4,11
-    802003c8:	0786                	slli	a5,a5,0x1
-    802003ca:	8385                	srli	a5,a5,0x1
-    802003cc:	06f76763          	bltu	a4,a5,8020043a <interrupt_handler+0x78>
-    802003d0:	00001717          	auipc	a4,0x1
-    802003d4:	b6070713          	addi	a4,a4,-1184 # 80200f30 <etext+0x544>
-    802003d8:	078a                	slli	a5,a5,0x2
-    802003da:	97ba                	add	a5,a5,a4
-    802003dc:	439c                	lw	a5,0(a5)
-    802003de:	97ba                	add	a5,a5,a4
-    802003e0:	8782                	jr	a5
-            break;
-        case IRQ_H_SOFT:
-            cprintf("Hypervisor software interrupt\n");
-            break;
-        case IRQ_M_SOFT:
-            cprintf("Machine software interrupt\n");
-    802003e2:	00001517          	auipc	a0,0x1
-    802003e6:	afe50513          	addi	a0,a0,-1282 # 80200ee0 <etext+0x4f4>
-    802003ea:	b151                	j	8020006e <cprintf>
-            cprintf("Hypervisor software interrupt\n");
-    802003ec:	00001517          	auipc	a0,0x1
-    802003f0:	ad450513          	addi	a0,a0,-1324 # 80200ec0 <etext+0x4d4>
-    802003f4:	b9ad                	j	8020006e <cprintf>
-            cprintf("User software interrupt\n");
-    802003f6:	00001517          	auipc	a0,0x1
-    802003fa:	a8a50513          	addi	a0,a0,-1398 # 80200e80 <etext+0x494>
-    802003fe:	b985                	j	8020006e <cprintf>
-            cprintf("Supervisor software interrupt\n");
-    80200400:	00001517          	auipc	a0,0x1
-    80200404:	aa050513          	addi	a0,a0,-1376 # 80200ea0 <etext+0x4b4>
-    80200408:	b19d                	j	8020006e <cprintf>
-void interrupt_handler(struct trapframe *tf) {
-    8020040a:	1141                	addi	sp,sp,-16
-    8020040c:	e406                	sd	ra,8(sp)
-             *(4)判断打印次数，当打印次数为10时，调用<sbi.h>中的关机函数关机
-            */
-            //
-            //cprintf("Supervisor timer interrupt\n");//不确定该行到底是否需要，暂时注释
-            //(1)设置下次时钟中断
-            clock_set_next_event();
-    8020040e:	d57ff0ef          	jal	ra,80200164 <clock_set_next_event>
-            //(2)计数器（ticks）加一
-            ticks++;
-    80200412:	00004797          	auipc	a5,0x4
-    80200416:	bfe78793          	addi	a5,a5,-1026 # 80204010 <ticks>
-    8020041a:	6398                	ld	a4,0(a5)
-            //(3)计数器为100时，输出`100ticks`，num加一
-            if(ticks==100)
-    8020041c:	06400693          	li	a3,100
-            ticks++;
-    80200420:	0705                	addi	a4,a4,1
-    80200422:	e398                	sd	a4,0(a5)
-            if(ticks==100)
-    80200424:	639c                	ld	a5,0(a5)
-    80200426:	00d78b63          	beq	a5,a3,8020043c <interrupt_handler+0x7a>
-            break;
-        default:
-            print_trapframe(tf);
-            break;
-    }
-}
-    8020042a:	60a2                	ld	ra,8(sp)
-    8020042c:	0141                	addi	sp,sp,16
-    8020042e:	8082                	ret
-            cprintf("Supervisor external interrupt\n");
-    80200430:	00001517          	auipc	a0,0x1
-    80200434:	ae050513          	addi	a0,a0,-1312 # 80200f10 <etext+0x524>
-    80200438:	b91d                	j	8020006e <cprintf>
-            print_trapframe(tf);
-    8020043a:	b725                	j	80200362 <print_trapframe>
-                cprintf("100ticks\n");
-    8020043c:	00001517          	auipc	a0,0x1
-    80200440:	ac450513          	addi	a0,a0,-1340 # 80200f00 <etext+0x514>
-    80200444:	c2bff0ef          	jal	ra,8020006e <cprintf>
-                ticks=0;
-    80200448:	00004797          	auipc	a5,0x4
-    8020044c:	bc07b423          	sd	zero,-1080(a5) # 80204010 <ticks>
-                num++;
-    80200450:	00004797          	auipc	a5,0x4
-    80200454:	bc878793          	addi	a5,a5,-1080 # 80204018 <num>
-    80200458:	6398                	ld	a4,0(a5)
-                if(num==10) sbi_shutdown();
-    8020045a:	46a9                	li	a3,10
-                num++;
-    8020045c:	0705                	addi	a4,a4,1
-    8020045e:	e398                	sd	a4,0(a5)
-                if(num==10) sbi_shutdown();
-    80200460:	639c                	ld	a5,0(a5)
-    80200462:	fcd794e3          	bne	a5,a3,8020042a <interrupt_handler+0x68>
-}
-    80200466:	60a2                	ld	ra,8(sp)
-    80200468:	0141                	addi	sp,sp,16
-                if(num==10) sbi_shutdown();
-    8020046a:	ab2d                	j	802009a4 <sbi_shutdown>
-
-000000008020046c <exception_handler>:
-
-void exception_handler(struct trapframe *tf) {
-    switch (tf->cause) {
-    8020046c:	11853783          	ld	a5,280(a0)
-    80200470:	4709                	li	a4,2
-    80200472:	00e78b63          	beq	a5,a4,80200488 <exception_handler+0x1c>
-    80200476:	00f77863          	bgeu	a4,a5,80200486 <exception_handler+0x1a>
-    8020047a:	17f5                	addi	a5,a5,-3
-    8020047c:	4721                	li	a4,8
-    8020047e:	00f77363          	bgeu	a4,a5,80200484 <exception_handler+0x18>
-        case CAUSE_HYPERVISOR_ECALL:
-            break;
-        case CAUSE_MACHINE_ECALL:
-            break;
-        default:
-            print_trapframe(tf);
-    80200482:	b5c5                	j	80200362 <print_trapframe>
-    80200484:	8082                	ret
+000000008020046e <exception_handler>:
+    8020046e:	11853783          	ld	a5,280(a0)
+    80200472:	4709                	li	a4,2
+    80200474:	00e78b63          	beq	a5,a4,8020048a <exception_handler+0x1c>
+    80200478:	00f77863          	bgeu	a4,a5,80200488 <exception_handler+0x1a>
+    8020047c:	17f5                	addi	a5,a5,-3
+    8020047e:	4721                	li	a4,8
+    80200480:	00f77363          	bgeu	a4,a5,80200486 <exception_handler+0x18>
+    80200484:	b5c5                	j	80200364 <print_trapframe>
     80200486:	8082                	ret
-void exception_handler(struct trapframe *tf) {
-    80200488:	1141                	addi	sp,sp,-16
-    8020048a:	e022                	sd	s0,0(sp)
-    8020048c:	842a                	mv	s0,a0
-            cprintf("Exception type:Illegal instruction\n");
-    8020048e:	00001517          	auipc	a0,0x1
-    80200492:	ad250513          	addi	a0,a0,-1326 # 80200f60 <etext+0x574>
-void exception_handler(struct trapframe *tf) {
-    80200496:	e406                	sd	ra,8(sp)
-            cprintf("Exception type:Illegal instruction\n");
-    80200498:	bd7ff0ef          	jal	ra,8020006e <cprintf>
-            cprintf("Illegal instruction at 0x%08x\n", tf->epc);
-    8020049c:	10843583          	ld	a1,264(s0)
-    802004a0:	00001517          	auipc	a0,0x1
-    802004a4:	ae850513          	addi	a0,a0,-1304 # 80200f88 <etext+0x59c>
-    802004a8:	bc7ff0ef          	jal	ra,8020006e <cprintf>
-            tf->epc +=4;
-    802004ac:	10843783          	ld	a5,264(s0)
-            break;
-    }
-}
-    802004b0:	60a2                	ld	ra,8(sp)
-            tf->epc +=4;
-    802004b2:	0791                	addi	a5,a5,4
-    802004b4:	10f43423          	sd	a5,264(s0)
-}
-    802004b8:	6402                	ld	s0,0(sp)
-    802004ba:	0141                	addi	sp,sp,16
-    802004bc:	8082                	ret
+    80200488:	8082                	ret
+    8020048a:	1141                	addi	sp,sp,-16
+    8020048c:	e022                	sd	s0,0(sp)
+    8020048e:	842a                	mv	s0,a0
+    80200490:	00001517          	auipc	a0,0x1
+    80200494:	ad050513          	addi	a0,a0,-1328 # 80200f60 <etext+0x574>
+    80200498:	e406                	sd	ra,8(sp)
+    8020049a:	bd7ff0ef          	jal	ra,80200070 <cprintf>
+    8020049e:	10843583          	ld	a1,264(s0)
+    802004a2:	00001517          	auipc	a0,0x1
+    802004a6:	ae650513          	addi	a0,a0,-1306 # 80200f88 <etext+0x59c>
+    802004aa:	bc7ff0ef          	jal	ra,80200070 <cprintf>
+    802004ae:	10843783          	ld	a5,264(s0)
+    802004b2:	60a2                	ld	ra,8(sp)
+    802004b4:	0791                	addi	a5,a5,4
+    802004b6:	10f43423          	sd	a5,264(s0)
+    802004ba:	6402                	ld	s0,0(sp)
+    802004bc:	0141                	addi	sp,sp,16
+    802004be:	8082                	ret
 
-00000000802004be <trap>:
-
-/* trap_dispatch - dispatch based on what type of trap occurred */
-static inline void trap_dispatch(struct trapframe *tf) {
-    if ((intptr_t)tf->cause < 0) {
-    802004be:	11853783          	ld	a5,280(a0)
-    802004c2:	0007c363          	bltz	a5,802004c8 <trap+0xa>
-        // interrupts
-        interrupt_handler(tf);
-    } else {
-        // exceptions
-        exception_handler(tf);
-    802004c6:	b75d                	j	8020046c <exception_handler>
-        interrupt_handler(tf);
-    802004c8:	bded                	j	802003c2 <interrupt_handler>
-	...
+00000000802004c0 <trap>:
+    802004c0:	11853783          	ld	a5,280(a0)
+    802004c4:	0007c363          	bltz	a5,802004ca <trap+0xa>
+    802004c8:	b75d                	j	8020046e <exception_handler>
+    802004ca:	bded                	j	802003c4 <interrupt_handler>
 
 00000000802004cc <__alltraps>:
     802004cc:	14011073          	csrw	sscratch,sp
@@ -633,7 +494,7 @@ static inline void trap_dispatch(struct trapframe *tf) {
     8020052a:	ea4e                	sd	s3,272(sp)
     8020052c:	ee52                	sd	s4,280(sp)
     8020052e:	850a                	mv	a0,sp
-    80200530:	f8fff0ef          	jal	ra,802004be <trap>
+    80200530:	f91ff0ef          	jal	ra,802004c0 <trap>
 
 0000000080200534 <__trapret>:
     80200534:	6492                	ld	s1,256(sp)
