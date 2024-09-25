@@ -26,9 +26,12 @@ static void print_ticks() {
  */
 void idt_init(void) {
     extern void __alltraps(void);
-    /* 将 sscratch register 设置为 0，指示我们当前正在内核中执行的异常向量 */
+    //约定：若中断前处于S态，sscratch为0
+    //若中断前处于U态，sscratch存储内核栈地址
+    //那么之后就可以通过sscratch的数值判断是内核态产生的中断还是用户态产生的中断
+    //我们现在是内核态所以给sscratch置零
     write_csr(sscratch, 0);
-    /* 设置异常向量地址 */
+    //我们保证__alltraps的地址是四字节对齐的，将__alltraps这个符号的地址直接写到stvec寄存器
     write_csr(stvec, &__alltraps);
 }
 

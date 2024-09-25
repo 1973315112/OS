@@ -11,6 +11,10 @@
  * */
 volatile size_t ticks;
 
+//对64位和32位架构，读取time的方法是不同的
+//32位架构下，需要把64位的time寄存器读到两个32位整数里，然后拼起来形成一个64位整数
+//64位架构简单的一句rdtime就可以了
+//__riscv_xlen是gcc定义的一个宏，可以用来区分是32位还是64位。
 /* *
  * get_cycles - 获取当前时钟周期数
  * */
@@ -41,18 +45,19 @@ static uint64_t timebase = 100000;
  * */
 void clock_init(void) {
     // 在 SIE 中启用计时器中断
+    // sie这个CSR可以单独使能/禁用某个来源的中断。默认时钟中断是关闭的
+    // 所以我们要在初始化的时候，使能时钟中断
     set_csr(sie, MIP_STIP);
-    // 使用 Spike 时除以 500 （2MHz）
-    // 使用 QEMU 时除以 100（10MHz）
-    // timebase = sbi_timebase() / 500;
+    //设置第一个时钟中断事件
     clock_set_next_event();
-
-    // 将时间计数器 'ticks' 初始化为零
+    // 初始化一个计数器
     ticks = 0;
 
     cprintf("++ setup timer interrupts\n");
 }
 
+//设置时钟中断：timer的数值变为当前时间 + timebase 后，触发一次时钟中断
+//对于QEMU, timer增加1，过去了10^-7 s， 也就是100ns
 /* *
  * clock_set_next_event - 设置下一次时钟中断事件
  * get_cycles() - 获取当前时钟周期数
