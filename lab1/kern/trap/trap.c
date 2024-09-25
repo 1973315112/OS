@@ -32,14 +32,14 @@ void idt_init(void) {
     write_csr(stvec, &__alltraps);
 }
 
-/* trap_in_kernel - 测试内核中是否发生陷阱 */
+/* trap_in_kernel - 测试内核中是否发生陷入 */
 bool trap_in_kernel(struct trapframe *tf) {
     return (tf->status & SSTATUS_SPP) != 0; 
-    // SSTATUS_SPP 是 sstatus 寄存器中的一个位，用于指示陷阱发生时的特权级别。
-    // 如果 SPP 为 1，则陷阱发生在内核模式下，否则陷阱发生在用户模式下。
+    // SSTATUS_SPP 是 sstatus 寄存器中的一个位，用于指示陷入发生时的特权级别。
+    // 如果 SPP 为 1，则陷入发生在内核模式下，否则陷入发生在用户模式下。
 }
 
-// 打印陷阱帧
+// 打印陷入帧
 void print_trapframe(struct trapframe *tf) {
     cprintf("trapframe at %p\n", tf);
     print_regs(&tf->gpr);
@@ -211,7 +211,7 @@ void exception_handler(struct trapframe *tf) {
     }
 }
 
-/* trap_dispatch - 根据发生的陷阱类型进行调度 */
+/* trap_dispatch - 根据发生的陷入类型进行调度 */
 static inline void trap_dispatch(struct trapframe *tf) {
     if ((intptr_t)tf->cause < 0) {
         // 中断

@@ -3,7 +3,7 @@
 
 #include <defs.h>
 
-// 定义了在陷阱（异常或中断）发生时需要保存的通用寄存器组
+// 定义了在陷入（异常或中断）发生时需要保存的通用寄存器组
 struct pushregs {
     uintptr_t zero;  // 硬连线为零（接地）的寄存器
     uintptr_t ra;    // 返回地址寄存器
@@ -39,13 +39,13 @@ struct pushregs {
     uintptr_t t6;    // 临时寄存器
 };
 
-// 定义了在陷阱（异常或中断）发生时需要保存的 CPU 状态
+// 定义了在陷入（异常或中断）发生时需要保存的 CPU 状态
 struct trapframe {
     struct pushregs gpr;   // 通用寄存器组
     uintptr_t status;      // 状态寄存器：保存 CPU 的当前状态
     uintptr_t epc;         // 异常程序计数器：保存发生异常时的指令地址
     uintptr_t badvaddr;    // 错误地址寄存器：保存导致异常的虚拟地址
-    uintptr_t cause;       // 异常原因寄存器：保存导致陷阱的原因代码
+    uintptr_t cause;       // 异常原因寄存器：保存导致陷入的原因代码
 };
 
 void trap(struct trapframe *tf);

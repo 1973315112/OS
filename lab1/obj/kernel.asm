@@ -48,9 +48,9 @@ int kern_init(void) {
 
     idt_init();  // init interrupt descriptor table
     80200042:	144000ef          	jal	ra,80200186 <idt_init>
-    __asm__ __volatile__("mret");  // 触发非法指令异常
+    __asm__ __volatile__("mret");  // 触发非法指令异常，用于 M 态中断返回到 S 态或 U 态，实际作用为pc←mepc，回顾sepc定义，返回到通过中断进入 M 态之前的地址
     80200046:	30200073          	mret
-    __asm__ __volatile__("ebreak");//触发断点异常
+    __asm__ __volatile__("ebreak");//触发断点异常，执行这条指令会触发一个断点中断从而进入中断处理流程。
     8020004a:	9002                	ebreak
     // rdtime in mbare mode crashes
     clock_init();  // init clock interrupt
@@ -143,25 +143,47 @@ int kern_init(void) {
     80200132:	bf3d                	j	80200070 <cprintf>
 
 0000000080200134 <clock_init>:
+static uint64_t timebase = 100000;
+
+/* *
+ * clock_init - 初始化 8253 clock 以每秒中断 100 次，然后启用 IRQ TIMER
+ * */
+void clock_init(void) {
     80200134:	1141                	addi	sp,sp,-16
     80200136:	e406                	sd	ra,8(sp)
+    // 在 SIE 中启用计时器中断
+    set_csr(sie, MIP_STIP);
     80200138:	02000793          	li	a5,32
     8020013c:	1047a7f3          	csrrs	a5,sie,a5
+    __asm__ __volatile__("rdtime %0" : "=r"(n));
     80200140:	c0102573          	rdtime	a0
+ * clock_set_next_event - 设置下一次时钟中断事件
+ * get_cycles() - 获取当前时钟周期数
+ * timebase - 硬编码时基
+ * sbi_set_timer() - 设置下一次时钟中断事件，sbi 代表 "Supervisor Binary Interface"，是 RISC-V 架构中的一个接口，用于在操作系统和硬件之间进行通信
+ * */
+void clock_set_next_event(void) { sbi_set_timer(get_cycles() + timebase); }
     80200144:	67e1                	lui	a5,0x18
     80200146:	6a078793          	addi	a5,a5,1696 # 186a0 <kern_entry-0x801e7960>
     8020014a:	953e                	add	a0,a0,a5
     8020014c:	07b000ef          	jal	ra,802009c6 <sbi_set_timer>
+}
     80200150:	60a2                	ld	ra,8(sp)
+    ticks = 0;
     80200152:	00004797          	auipc	a5,0x4
     80200156:	ea07bf23          	sd	zero,-322(a5) # 80204010 <ticks>
+    cprintf("++ setup timer interrupts\n");
     8020015a:	00001517          	auipc	a0,0x1
     8020015e:	9c650513          	addi	a0,a0,-1594 # 80200b20 <etext+0xf8>
+}
     80200162:	0141                	addi	sp,sp,16
+    cprintf("++ setup timer interrupts\n");
     80200164:	b731                	j	80200070 <cprintf>
 
 0000000080200166 <clock_set_next_event>:
+    __asm__ __volatile__("rdtime %0" : "=r"(n));
     80200166:	c0102573          	rdtime	a0
+void clock_set_next_event(void) { sbi_set_timer(get_cycles() + timebase); }
     8020016a:	67e1                	lui	a5,0x18
     8020016c:	6a078793          	addi	a5,a5,1696 # 186a0 <kern_entry-0x801e7960>
     80200170:	953e                	add	a0,a0,a5
@@ -175,6 +197,12 @@ int kern_init(void) {
     8020017c:	0310006f          	j	802009ac <sbi_console_putchar>
 
 0000000080200180 <intr_enable>:
+    [4]    | Reserved                            | 1 位 | 保留位，未定义，读取时为0，写入无效。
+    [3:2]  | Reserved                            | 2 位 | 保留位，未定义，读取时为0，写入无效。
+    [1]    | SIE (Supervisor Interrupt Enable)   | 1 位 | 控制是否在特权模式下启用中断。1：启用；0：禁用。
+    [0]    | UIE (User Interrupt Enable)         | 1 位 | 控制用户模式下的中断。1：允许中断；0：禁用中断。
+ */
+void intr_enable(void) { set_csr(sstatus, SSTATUS_SIE); }
     80200180:	100167f3          	csrrsi	a5,sstatus,2
     80200184:	8082                	ret
 
@@ -527,6 +555,7 @@ void interrupt_handler(struct trapframe *tf) {
 
 0000000080200472 <exception_handler>:
 
+// 异常处理函数
 void exception_handler(struct trapframe *tf) {
     switch (tf->cause) {
     80200472:	11853783          	ld	a5,280(a0)
@@ -583,7 +612,7 @@ void exception_handler(struct trapframe *tf) {
     802004c8:	0141                	addi	sp,sp,16
             print_trapframe(tf);
     802004ca:	bd69                	j	80200364 <print_trapframe>
-            cprintf("Exception type:breakpoint\n");
+            cprintf("Exception type: breakpoint\n");
     802004cc:	00001517          	auipc	a0,0x1
     802004d0:	b1c50513          	addi	a0,a0,-1252 # 80200fe8 <etext+0x5c0>
     802004d4:	b9dff0ef          	jal	ra,80200070 <cprintf>
@@ -606,15 +635,15 @@ void exception_handler(struct trapframe *tf) {
 
 00000000802004fa <trap>:
 
-/* trap_dispatch - dispatch based on what type of trap occurred */
+/* trap_dispatch - 根据发生的陷入类型进行调度 */
 static inline void trap_dispatch(struct trapframe *tf) {
     if ((intptr_t)tf->cause < 0) {
     802004fa:	11853783          	ld	a5,280(a0)
     802004fe:	0007c363          	bltz	a5,80200504 <trap+0xa>
-        // interrupts
+        // 中断
         interrupt_handler(tf);
     } else {
-        // exceptions
+        // 异常
         exception_handler(tf);
     80200502:	bf85                	j	80200472 <exception_handler>
         interrupt_handler(tf);
@@ -622,6 +651,12 @@ static inline void trap_dispatch(struct trapframe *tf) {
 	...
 
 0000000080200508 <__alltraps>:
+    .endm
+
+    .globl __alltraps
+.align(2)
+__alltraps:
+    SAVE_ALL
     80200508:	14011073          	csrw	sscratch,sp
     8020050c:	712d                	addi	sp,sp,-288
     8020050e:	e002                	sd	zero,0(sp)
@@ -665,10 +700,18 @@ static inline void trap_dispatch(struct trapframe *tf) {
     80200564:	e64a                	sd	s2,264(sp)
     80200566:	ea4e                	sd	s3,272(sp)
     80200568:	ee52                	sd	s4,280(sp)
+
+    move  a0, sp
     8020056a:	850a                	mv	a0,sp
+    jal trap
     8020056c:	f8fff0ef          	jal	ra,802004fa <trap>
 
 0000000080200570 <__trapret>:
+    # sp should be the same as before "jal trap"
+
+    .globl __trapret
+__trapret:
+    RESTORE_ALL
     80200570:	6492                	ld	s1,256(sp)
     80200572:	6932                	ld	s2,264(sp)
     80200574:	10049073          	csrw	sstatus,s1
@@ -704,6 +747,8 @@ static inline void trap_dispatch(struct trapframe *tf) {
     802005b4:	7f4e                	ld	t5,240(sp)
     802005b6:	7fee                	ld	t6,248(sp)
     802005b8:	6142                	ld	sp,16(sp)
+    # return from supervisor call
+    sret
     802005ba:	10200073          	sret
 
 00000000802005be <printnum>:
@@ -1070,6 +1115,12 @@ static inline void trap_dispatch(struct trapframe *tf) {
     802009aa:	8082                	ret
 
 00000000802009ac <sbi_console_putchar>:
+// ecall(environment call)
+// 当我们在 S 态执行这条指令时，会触发一个 ecall-from-s-mode-exception，从而进入 M 模式中的中断处理流程（如设置定时器等）；
+// 当我们在 U 态执行这条指令时，会触发一个 ecall-from-u-mode-exception，从而进入 S 模式中的中断处理流程（常用来进行系统调用）
+uint64_t sbi_call(uint64_t sbi_type, uint64_t arg0, uint64_t arg1, uint64_t arg2) {
+    uint64_t ret_val;
+    __asm__ volatile (
     802009ac:	4781                	li	a5,0
     802009ae:	00003717          	auipc	a4,0x3
     802009b2:	65273703          	ld	a4,1618(a4) # 80204000 <SBI_CONSOLE_PUTCHAR>
@@ -1079,9 +1130,16 @@ static inline void trap_dispatch(struct trapframe *tf) {
     802009bc:	863e                	mv	a2,a5
     802009be:	00000073          	ecall
     802009c2:	87aa                	mv	a5,a0
+int sbi_console_getchar(void) {
+    return sbi_call(SBI_CONSOLE_GETCHAR, 0, 0, 0);
+}
+void sbi_console_putchar(unsigned char ch) {
+    sbi_call(SBI_CONSOLE_PUTCHAR, ch, 0, 0);
+}
     802009c4:	8082                	ret
 
 00000000802009c6 <sbi_set_timer>:
+    __asm__ volatile (
     802009c6:	4781                	li	a5,0
     802009c8:	00003717          	auipc	a4,0x3
     802009cc:	65873703          	ld	a4,1624(a4) # 80204020 <SBI_SET_TIMER>
@@ -1091,9 +1149,14 @@ static inline void trap_dispatch(struct trapframe *tf) {
     802009d6:	863e                	mv	a2,a5
     802009d8:	00000073          	ecall
     802009dc:	87aa                	mv	a5,a0
+
+void sbi_set_timer(unsigned long long stime_value) {
+    sbi_call(SBI_SET_TIMER, stime_value, 0, 0);
+}
     802009de:	8082                	ret
 
 00000000802009e0 <sbi_shutdown>:
+    __asm__ volatile (
     802009e0:	4781                	li	a5,0
     802009e2:	00003717          	auipc	a4,0x3
     802009e6:	62673703          	ld	a4,1574(a4) # 80204008 <SBI_SHUTDOWN>
@@ -1103,6 +1166,11 @@ static inline void trap_dispatch(struct trapframe *tf) {
     802009f0:	863e                	mv	a2,a5
     802009f2:	00000073          	ecall
     802009f6:	87aa                	mv	a5,a0
+
+
+void sbi_shutdown(void)
+{
+    sbi_call(SBI_SHUTDOWN,0,0,0);
     802009f8:	8082                	ret
 
 00000000802009fa <strnlen>:

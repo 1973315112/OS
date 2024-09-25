@@ -37,18 +37,17 @@ static inline uint64_t get_cycles(void) {
 static uint64_t timebase = 100000;
 
 /* *
- * clock_init - initialize 8253 clock to interrupt 100 times per second,
- * and then enable IRQ_TIMER.
+ * clock_init - 初始化 8253 clock 以每秒中断 100 次，然后启用 IRQ TIMER
  * */
 void clock_init(void) {
-    // enable timer interrupt in sie
+    // 在 SIE 中启用计时器中断
     set_csr(sie, MIP_STIP);
-    // divided by 500 when using Spike(2MHz)
-    // divided by 100 when using QEMU(10MHz)
+    // 使用 Spike 时除以 500 （2MHz）
+    // 使用 QEMU 时除以 100（10MHz）
     // timebase = sbi_timebase() / 500;
     clock_set_next_event();
 
-    // initialize time counter 'ticks' to zero
+    // 将时间计数器 'ticks' 初始化为零
     ticks = 0;
 
     cprintf("++ setup timer interrupts\n");

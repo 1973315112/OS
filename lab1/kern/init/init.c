@@ -27,8 +27,8 @@ int kern_init(void) {
     // grade_backtrace();
 
     idt_init();  // init interrupt descriptor table
-    __asm__ __volatile__("mret");  // 触发非法指令异常
-    __asm__ __volatile__("ebreak");//触发断点异常
+    __asm__ __volatile__("mret");  // 触发非法指令异常，用于 M 态中断返回到 S 态或 U 态，实际作用为pc←mepc，回顾sepc定义，返回到通过中断进入 M 态之前的地址
+    __asm__ __volatile__("ebreak");//触发断点异常，执行这条指令会触发一个断点中断从而进入中断处理流程。
     // rdtime in mbare mode crashes
     clock_init();  // init clock interrupt
 
