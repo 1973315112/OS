@@ -26,18 +26,20 @@ static void print_ticks() {
  */
 void idt_init(void) {
     extern void __alltraps(void);
-    /* Set sscratch register to 0, indicating to exception vector that we are
-     * presently executing in the kernel */
+    /* 将 sscratch register 设置为 0，指示我们当前正在内核中执行的异常向量 */
     write_csr(sscratch, 0);
-    /* Set the exception vector address */
+    /* 设置异常向量地址 */
     write_csr(stvec, &__alltraps);
 }
 
-/* trap_in_kernel - test if trap happened in kernel */
+/* trap_in_kernel - 测试内核中是否发生陷阱 */
 bool trap_in_kernel(struct trapframe *tf) {
-    return (tf->status & SSTATUS_SPP) != 0;
+    return (tf->status & SSTATUS_SPP) != 0; 
+    // SSTATUS_SPP 是 sstatus 寄存器中的一个位，用于指示陷阱发生时的特权级别。
+    // 如果 SPP 为 1，则陷阱发生在内核模式下，否则陷阱发生在用户模式下。
 }
 
+// 打印陷阱帧
 void print_trapframe(struct trapframe *tf) {
     cprintf("trapframe at %p\n", tf);
     print_regs(&tf->gpr);
@@ -82,6 +84,7 @@ void print_regs(struct pushregs *gpr) {
     cprintf("  t6       0x%08x\n", gpr->t6);
 }
 
+// 中断处理函数
 void interrupt_handler(struct trapframe *tf) {
     intptr_t cause = (tf->cause << 1) >> 1;
     switch (cause) {
@@ -151,6 +154,7 @@ void interrupt_handler(struct trapframe *tf) {
     }
 }
 
+// 异常处理函数
 void exception_handler(struct trapframe *tf) {
     switch (tf->cause) {
         case CAUSE_MISALIGNED_FETCH:
@@ -165,7 +169,7 @@ void exception_handler(struct trapframe *tf) {
              *(3)更新 tf->epc寄存器
             */
             //输出指令异常类型：Illegal instruction
-            cprintf("Exception type:Illegal instruction\n");
+            cprintf("Exception type: Illegal instruction\n");
             //输出异常指令地址（"%08x":输出用0填充至8个字符的十六进制数）
             cprintf("Illegal instruction caught at 0x%08x\n", tf->epc);
             //更新 tf->epc寄存器
@@ -179,7 +183,7 @@ void exception_handler(struct trapframe *tf) {
              *(3)更新 tf->epc寄存器
             */
             //输出指令异常类型:breakpoint
-            cprintf("Exception type:breakpoint\n");
+            cprintf("Exception type: breakpoint\n");
             //输出异常指令地址
             cprintf("ebreak caught at 0x%08x\n", tf->epc);
             //更新tf->epc寄存器(ebreak 指令大小为 2 字节)
@@ -207,21 +211,19 @@ void exception_handler(struct trapframe *tf) {
     }
 }
 
-/* trap_dispatch - dispatch based on what type of trap occurred */
+/* trap_dispatch - 根据发生的陷阱类型进行调度 */
 static inline void trap_dispatch(struct trapframe *tf) {
     if ((intptr_t)tf->cause < 0) {
-        // interrupts
+        // 中断
         interrupt_handler(tf);
     } else {
-        // exceptions
+        // 异常
         exception_handler(tf);
     }
 }
 
 /* *
- * trap - handles or dispatches an exception/interrupt. if and when trap()
- * returns,
- * the code in kern/trap/trapentry.S restores the old CPU state saved in the
- * trapframe and then uses the iret instruction to return from the exception.
+ * trap - 当 trap（） 返回时处理或调度异常中断,
+ * kern/trap/trapentry.S 中的代码恢复保存在 trapframe 中的旧 CPU 状态，然后使用 iret 指令从异常中返回。
  * */
 void trap(struct trapframe *tf) { trap_dispatch(tf); }

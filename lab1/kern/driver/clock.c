@@ -4,8 +4,16 @@
 #include <stdio.h>
 #include <riscv.h>
 
+
+/* *
+ * ticks - 系统启动以来的时钟中断次数
+ * volatile - 防止编译器优化，编译器在每次访问这个变量时都会重新读取它的值，而不是使用寄存器中的缓存值
+ * */
 volatile size_t ticks;
 
+/* *
+ * get_cycles - 获取当前时钟周期数
+ * */
 static inline uint64_t get_cycles(void) {
 #if __riscv_xlen == 64
     uint64_t n;
@@ -25,7 +33,7 @@ static inline uint64_t get_cycles(void) {
 }
 
 
-// Hardcode timebase
+// 硬编码时基
 static uint64_t timebase = 100000;
 
 /* *
@@ -46,4 +54,10 @@ void clock_init(void) {
     cprintf("++ setup timer interrupts\n");
 }
 
+/* *
+ * clock_set_next_event - 设置下一次时钟中断事件
+ * get_cycles() - 获取当前时钟周期数
+ * timebase - 硬编码时基
+ * sbi_set_timer() - 设置下一次时钟中断事件，sbi 代表 "Supervisor Binary Interface"，是 RISC-V 架构中的一个接口，用于在操作系统和硬件之间进行通信
+ * */
 void clock_set_next_event(void) { sbi_set_timer(get_cycles() + timebase); }
