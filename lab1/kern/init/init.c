@@ -34,7 +34,6 @@ int kern_init(void) {
     // rdtime in mbare mode crashes
     clock_init();  // init clock interrupt
 
-    
     while (1) {}
 }
 
