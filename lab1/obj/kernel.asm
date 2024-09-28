@@ -48,16 +48,17 @@ int kern_init(void) {
 
     idt_init();  // init interrupt descriptor table
     80200042:	144000ef          	jal	ra,80200186 <idt_init>
+    intr_enable();  // enable irq interrupt
+    80200046:	13a000ef          	jal	ra,80200180 <intr_enable>
+
     __asm__ __volatile__("mret");  // 触发非法指令异常，用于 M 态中断返回到 S 态或 U 态，实际作用为pc←mepc，回顾sepc定义，返回到通过中断进入 M 态之前的地址
-    80200046:	30200073          	mret
+    8020004a:	30200073          	mret
     __asm__ __volatile__("ebreak");//触发断点异常，执行这条指令会触发一个断点中断从而进入中断处理流程。
-    8020004a:	9002                	ebreak
+    8020004e:	9002                	ebreak
     // rdtime in mbare mode crashes
     clock_init();  // init clock interrupt
-    8020004c:	0e8000ef          	jal	ra,80200134 <clock_init>
+    80200050:	0e4000ef          	jal	ra,80200134 <clock_init>
 
-    intr_enable();  // enable irq interrupt
-    80200050:	130000ef          	jal	ra,80200180 <intr_enable>
     
     while (1) {}
     80200054:	a001                	j	80200054 <kern_init+0x4a>
@@ -143,47 +144,47 @@ int kern_init(void) {
     80200132:	bf3d                	j	80200070 <cprintf>
 
 0000000080200134 <clock_init>:
+}
+
+
+// 硬编码时基
 static uint64_t timebase = 100000;
 
-/* *
- * clock_init - 初始化 8253 clock 以每秒中断 100 次，然后启用 IRQ TIMER
- * */
-void clock_init(void) {
     80200134:	1141                	addi	sp,sp,-16
     80200136:	e406                	sd	ra,8(sp)
-    // 在 SIE 中启用计时器中断
-    set_csr(sie, MIP_STIP);
+/* *
+ * clock_init - 初始化 8253 clock 以每秒中断 100 次，然后启用 IRQ TIMER
     80200138:	02000793          	li	a5,32
     8020013c:	1047a7f3          	csrrs	a5,sie,a5
-    __asm__ __volatile__("rdtime %0" : "=r"(n));
-    80200140:	c0102573          	rdtime	a0
- * clock_set_next_event - 设置下一次时钟中断事件
- * get_cycles() - 获取当前时钟周期数
- * timebase - 硬编码时基
- * sbi_set_timer() - 设置下一次时钟中断事件，sbi 代表 "Supervisor Binary Interface"，是 RISC-V 架构中的一个接口，用于在操作系统和硬件之间进行通信
  * */
-void clock_set_next_event(void) { sbi_set_timer(get_cycles() + timebase); }
+    80200140:	c0102573          	rdtime	a0
+}
+
+//设置时钟中断：timer的数值变为当前时间 + timebase 后，触发一次时钟中断
+//对于QEMU, timer增加1，过去了10^-7 s， 也就是100ns
+/* *
+ * clock_set_next_event - 设置下一次时钟中断事件
     80200144:	67e1                	lui	a5,0x18
     80200146:	6a078793          	addi	a5,a5,1696 # 186a0 <kern_entry-0x801e7960>
     8020014a:	953e                	add	a0,a0,a5
     8020014c:	07b000ef          	jal	ra,802009c6 <sbi_set_timer>
-}
-    80200150:	60a2                	ld	ra,8(sp)
     ticks = 0;
+    80200150:	60a2                	ld	ra,8(sp)
+    //设置第一个时钟中断事件
     80200152:	00004797          	auipc	a5,0x4
     80200156:	ea07bf23          	sd	zero,-322(a5) # 80204010 <ticks>
-    cprintf("++ setup timer interrupts\n");
+    // 初始化一个计数器
     8020015a:	00001517          	auipc	a0,0x1
     8020015e:	9c650513          	addi	a0,a0,-1594 # 80200b20 <etext+0xf8>
-}
+    ticks = 0;
     80200162:	0141                	addi	sp,sp,16
-    cprintf("++ setup timer interrupts\n");
+    // 初始化一个计数器
     80200164:	b731                	j	80200070 <cprintf>
 
 0000000080200166 <clock_set_next_event>:
-    __asm__ __volatile__("rdtime %0" : "=r"(n));
+ * */
     80200166:	c0102573          	rdtime	a0
-void clock_set_next_event(void) { sbi_set_timer(get_cycles() + timebase); }
+ * clock_set_next_event - 设置下一次时钟中断事件
     8020016a:	67e1                	lui	a5,0x18
     8020016c:	6a078793          	addi	a5,a5,1696 # 186a0 <kern_entry-0x801e7960>
     80200170:	953e                	add	a0,a0,a5
@@ -211,250 +212,250 @@ void intr_enable(void) { set_csr(sstatus, SSTATUS_SIE); }
  */
 void idt_init(void) {
     extern void __alltraps(void);
-    /* 将 sscratch register 设置为 0，指示我们当前正在内核中执行的异常向量 */
-    write_csr(sscratch, 0);
+    //约定：若中断前处于S态，sscratch为0
+    //若中断前处于U态，sscratch存储内核栈地址
     80200186:	14005073          	csrwi	sscratch,0
-    /* 设置异常向量地址 */
-    write_csr(stvec, &__alltraps);
+    //那么之后就可以通过sscratch的数值判断是内核态产生的中断还是用户态产生的中断
+    //我们现在是内核态所以给sscratch置零
     8020018a:	00000797          	auipc	a5,0x0
     8020018e:	37e78793          	addi	a5,a5,894 # 80200508 <__alltraps>
     80200192:	10579073          	csrw	stvec,a5
-}
+    write_csr(sscratch, 0);
     80200196:	8082                	ret
 
 0000000080200198 <print_regs>:
+    print_regs(&tf->gpr);
+    cprintf("  status   0x%08x\n", tf->status);
+    cprintf("  epc      0x%08x\n", tf->epc);
     cprintf("  badvaddr 0x%08x\n", tf->badvaddr);
     cprintf("  cause    0x%08x\n", tf->cause);
 }
-
-void print_regs(struct pushregs *gpr) {
-    cprintf("  zero     0x%08x\n", gpr->zero);
     80200198:	610c                	ld	a1,0(a0)
-void print_regs(struct pushregs *gpr) {
+    cprintf("  cause    0x%08x\n", tf->cause);
     8020019a:	1141                	addi	sp,sp,-16
     8020019c:	e022                	sd	s0,0(sp)
     8020019e:	842a                	mv	s0,a0
-    cprintf("  zero     0x%08x\n", gpr->zero);
+}
     802001a0:	00001517          	auipc	a0,0x1
     802001a4:	9a050513          	addi	a0,a0,-1632 # 80200b40 <etext+0x118>
-void print_regs(struct pushregs *gpr) {
+    cprintf("  cause    0x%08x\n", tf->cause);
     802001a8:	e406                	sd	ra,8(sp)
-    cprintf("  zero     0x%08x\n", gpr->zero);
+}
     802001aa:	ec7ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  ra       0x%08x\n", gpr->ra);
+
     802001ae:	640c                	ld	a1,8(s0)
     802001b0:	00001517          	auipc	a0,0x1
     802001b4:	9a850513          	addi	a0,a0,-1624 # 80200b58 <etext+0x130>
     802001b8:	eb9ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  sp       0x%08x\n", gpr->sp);
+void print_regs(struct pushregs *gpr) {
     802001bc:	680c                	ld	a1,16(s0)
     802001be:	00001517          	auipc	a0,0x1
     802001c2:	9b250513          	addi	a0,a0,-1614 # 80200b70 <etext+0x148>
     802001c6:	eabff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  gp       0x%08x\n", gpr->gp);
+    cprintf("  zero     0x%08x\n", gpr->zero);
     802001ca:	6c0c                	ld	a1,24(s0)
     802001cc:	00001517          	auipc	a0,0x1
     802001d0:	9bc50513          	addi	a0,a0,-1604 # 80200b88 <etext+0x160>
     802001d4:	e9dff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  tp       0x%08x\n", gpr->tp);
+    cprintf("  ra       0x%08x\n", gpr->ra);
     802001d8:	700c                	ld	a1,32(s0)
     802001da:	00001517          	auipc	a0,0x1
     802001de:	9c650513          	addi	a0,a0,-1594 # 80200ba0 <etext+0x178>
     802001e2:	e8fff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  t0       0x%08x\n", gpr->t0);
+    cprintf("  sp       0x%08x\n", gpr->sp);
     802001e6:	740c                	ld	a1,40(s0)
     802001e8:	00001517          	auipc	a0,0x1
     802001ec:	9d050513          	addi	a0,a0,-1584 # 80200bb8 <etext+0x190>
     802001f0:	e81ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  t1       0x%08x\n", gpr->t1);
+    cprintf("  gp       0x%08x\n", gpr->gp);
     802001f4:	780c                	ld	a1,48(s0)
     802001f6:	00001517          	auipc	a0,0x1
     802001fa:	9da50513          	addi	a0,a0,-1574 # 80200bd0 <etext+0x1a8>
     802001fe:	e73ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  t2       0x%08x\n", gpr->t2);
+    cprintf("  tp       0x%08x\n", gpr->tp);
     80200202:	7c0c                	ld	a1,56(s0)
     80200204:	00001517          	auipc	a0,0x1
     80200208:	9e450513          	addi	a0,a0,-1564 # 80200be8 <etext+0x1c0>
     8020020c:	e65ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s0       0x%08x\n", gpr->s0);
+    cprintf("  t0       0x%08x\n", gpr->t0);
     80200210:	602c                	ld	a1,64(s0)
     80200212:	00001517          	auipc	a0,0x1
     80200216:	9ee50513          	addi	a0,a0,-1554 # 80200c00 <etext+0x1d8>
     8020021a:	e57ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s1       0x%08x\n", gpr->s1);
+    cprintf("  t1       0x%08x\n", gpr->t1);
     8020021e:	642c                	ld	a1,72(s0)
     80200220:	00001517          	auipc	a0,0x1
     80200224:	9f850513          	addi	a0,a0,-1544 # 80200c18 <etext+0x1f0>
     80200228:	e49ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  a0       0x%08x\n", gpr->a0);
+    cprintf("  t2       0x%08x\n", gpr->t2);
     8020022c:	682c                	ld	a1,80(s0)
     8020022e:	00001517          	auipc	a0,0x1
     80200232:	a0250513          	addi	a0,a0,-1534 # 80200c30 <etext+0x208>
     80200236:	e3bff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  a1       0x%08x\n", gpr->a1);
+    cprintf("  s0       0x%08x\n", gpr->s0);
     8020023a:	6c2c                	ld	a1,88(s0)
     8020023c:	00001517          	auipc	a0,0x1
     80200240:	a0c50513          	addi	a0,a0,-1524 # 80200c48 <etext+0x220>
     80200244:	e2dff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  a2       0x%08x\n", gpr->a2);
+    cprintf("  s1       0x%08x\n", gpr->s1);
     80200248:	702c                	ld	a1,96(s0)
     8020024a:	00001517          	auipc	a0,0x1
     8020024e:	a1650513          	addi	a0,a0,-1514 # 80200c60 <etext+0x238>
     80200252:	e1fff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  a3       0x%08x\n", gpr->a3);
+    cprintf("  a0       0x%08x\n", gpr->a0);
     80200256:	742c                	ld	a1,104(s0)
     80200258:	00001517          	auipc	a0,0x1
     8020025c:	a2050513          	addi	a0,a0,-1504 # 80200c78 <etext+0x250>
     80200260:	e11ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  a4       0x%08x\n", gpr->a4);
+    cprintf("  a1       0x%08x\n", gpr->a1);
     80200264:	782c                	ld	a1,112(s0)
     80200266:	00001517          	auipc	a0,0x1
     8020026a:	a2a50513          	addi	a0,a0,-1494 # 80200c90 <etext+0x268>
     8020026e:	e03ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  a5       0x%08x\n", gpr->a5);
+    cprintf("  a2       0x%08x\n", gpr->a2);
     80200272:	7c2c                	ld	a1,120(s0)
     80200274:	00001517          	auipc	a0,0x1
     80200278:	a3450513          	addi	a0,a0,-1484 # 80200ca8 <etext+0x280>
     8020027c:	df5ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  a6       0x%08x\n", gpr->a6);
+    cprintf("  a3       0x%08x\n", gpr->a3);
     80200280:	604c                	ld	a1,128(s0)
     80200282:	00001517          	auipc	a0,0x1
     80200286:	a3e50513          	addi	a0,a0,-1474 # 80200cc0 <etext+0x298>
     8020028a:	de7ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  a7       0x%08x\n", gpr->a7);
+    cprintf("  a4       0x%08x\n", gpr->a4);
     8020028e:	644c                	ld	a1,136(s0)
     80200290:	00001517          	auipc	a0,0x1
     80200294:	a4850513          	addi	a0,a0,-1464 # 80200cd8 <etext+0x2b0>
     80200298:	dd9ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s2       0x%08x\n", gpr->s2);
+    cprintf("  a5       0x%08x\n", gpr->a5);
     8020029c:	684c                	ld	a1,144(s0)
     8020029e:	00001517          	auipc	a0,0x1
     802002a2:	a5250513          	addi	a0,a0,-1454 # 80200cf0 <etext+0x2c8>
     802002a6:	dcbff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s3       0x%08x\n", gpr->s3);
+    cprintf("  a6       0x%08x\n", gpr->a6);
     802002aa:	6c4c                	ld	a1,152(s0)
     802002ac:	00001517          	auipc	a0,0x1
     802002b0:	a5c50513          	addi	a0,a0,-1444 # 80200d08 <etext+0x2e0>
     802002b4:	dbdff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s4       0x%08x\n", gpr->s4);
+    cprintf("  a7       0x%08x\n", gpr->a7);
     802002b8:	704c                	ld	a1,160(s0)
     802002ba:	00001517          	auipc	a0,0x1
     802002be:	a6650513          	addi	a0,a0,-1434 # 80200d20 <etext+0x2f8>
     802002c2:	dafff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s5       0x%08x\n", gpr->s5);
+    cprintf("  s2       0x%08x\n", gpr->s2);
     802002c6:	744c                	ld	a1,168(s0)
     802002c8:	00001517          	auipc	a0,0x1
     802002cc:	a7050513          	addi	a0,a0,-1424 # 80200d38 <etext+0x310>
     802002d0:	da1ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s6       0x%08x\n", gpr->s6);
+    cprintf("  s3       0x%08x\n", gpr->s3);
     802002d4:	784c                	ld	a1,176(s0)
     802002d6:	00001517          	auipc	a0,0x1
     802002da:	a7a50513          	addi	a0,a0,-1414 # 80200d50 <etext+0x328>
     802002de:	d93ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s7       0x%08x\n", gpr->s7);
+    cprintf("  s4       0x%08x\n", gpr->s4);
     802002e2:	7c4c                	ld	a1,184(s0)
     802002e4:	00001517          	auipc	a0,0x1
     802002e8:	a8450513          	addi	a0,a0,-1404 # 80200d68 <etext+0x340>
     802002ec:	d85ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s8       0x%08x\n", gpr->s8);
+    cprintf("  s5       0x%08x\n", gpr->s5);
     802002f0:	606c                	ld	a1,192(s0)
     802002f2:	00001517          	auipc	a0,0x1
     802002f6:	a8e50513          	addi	a0,a0,-1394 # 80200d80 <etext+0x358>
     802002fa:	d77ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s9       0x%08x\n", gpr->s9);
+    cprintf("  s6       0x%08x\n", gpr->s6);
     802002fe:	646c                	ld	a1,200(s0)
     80200300:	00001517          	auipc	a0,0x1
     80200304:	a9850513          	addi	a0,a0,-1384 # 80200d98 <etext+0x370>
     80200308:	d69ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s10      0x%08x\n", gpr->s10);
+    cprintf("  s7       0x%08x\n", gpr->s7);
     8020030c:	686c                	ld	a1,208(s0)
     8020030e:	00001517          	auipc	a0,0x1
     80200312:	aa250513          	addi	a0,a0,-1374 # 80200db0 <etext+0x388>
     80200316:	d5bff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  s11      0x%08x\n", gpr->s11);
+    cprintf("  s8       0x%08x\n", gpr->s8);
     8020031a:	6c6c                	ld	a1,216(s0)
     8020031c:	00001517          	auipc	a0,0x1
     80200320:	aac50513          	addi	a0,a0,-1364 # 80200dc8 <etext+0x3a0>
     80200324:	d4dff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  t3       0x%08x\n", gpr->t3);
+    cprintf("  s9       0x%08x\n", gpr->s9);
     80200328:	706c                	ld	a1,224(s0)
     8020032a:	00001517          	auipc	a0,0x1
     8020032e:	ab650513          	addi	a0,a0,-1354 # 80200de0 <etext+0x3b8>
     80200332:	d3fff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  t4       0x%08x\n", gpr->t4);
+    cprintf("  s10      0x%08x\n", gpr->s10);
     80200336:	746c                	ld	a1,232(s0)
     80200338:	00001517          	auipc	a0,0x1
     8020033c:	ac050513          	addi	a0,a0,-1344 # 80200df8 <etext+0x3d0>
     80200340:	d31ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  t5       0x%08x\n", gpr->t5);
+    cprintf("  s11      0x%08x\n", gpr->s11);
     80200344:	786c                	ld	a1,240(s0)
     80200346:	00001517          	auipc	a0,0x1
     8020034a:	aca50513          	addi	a0,a0,-1334 # 80200e10 <etext+0x3e8>
     8020034e:	d23ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  t6       0x%08x\n", gpr->t6);
+    cprintf("  t3       0x%08x\n", gpr->t3);
     80200352:	7c6c                	ld	a1,248(s0)
-}
+    cprintf("  t4       0x%08x\n", gpr->t4);
     80200354:	6402                	ld	s0,0(sp)
     80200356:	60a2                	ld	ra,8(sp)
-    cprintf("  t6       0x%08x\n", gpr->t6);
+    cprintf("  t3       0x%08x\n", gpr->t3);
     80200358:	00001517          	auipc	a0,0x1
     8020035c:	ad050513          	addi	a0,a0,-1328 # 80200e28 <etext+0x400>
-}
+    cprintf("  t4       0x%08x\n", gpr->t4);
     80200360:	0141                	addi	sp,sp,16
-    cprintf("  t6       0x%08x\n", gpr->t6);
+    cprintf("  t3       0x%08x\n", gpr->t3);
     80200362:	b339                	j	80200070 <cprintf>
 
 0000000080200364 <print_trapframe>:
-void print_trapframe(struct trapframe *tf) {
+}
     80200364:	1141                	addi	sp,sp,-16
     80200366:	e022                	sd	s0,0(sp)
-    cprintf("trapframe at %p\n", tf);
+
     80200368:	85aa                	mv	a1,a0
-void print_trapframe(struct trapframe *tf) {
+}
     8020036a:	842a                	mv	s0,a0
-    cprintf("trapframe at %p\n", tf);
+
     8020036c:	00001517          	auipc	a0,0x1
     80200370:	ad450513          	addi	a0,a0,-1324 # 80200e40 <etext+0x418>
-void print_trapframe(struct trapframe *tf) {
+}
     80200374:	e406                	sd	ra,8(sp)
-    cprintf("trapframe at %p\n", tf);
+
     80200376:	cfbff0ef          	jal	ra,80200070 <cprintf>
-    print_regs(&tf->gpr);
+// 打印陷入帧
     8020037a:	8522                	mv	a0,s0
     8020037c:	e1dff0ef          	jal	ra,80200198 <print_regs>
-    cprintf("  status   0x%08x\n", tf->status);
+void print_trapframe(struct trapframe *tf) {
     80200380:	10043583          	ld	a1,256(s0)
     80200384:	00001517          	auipc	a0,0x1
     80200388:	ad450513          	addi	a0,a0,-1324 # 80200e58 <etext+0x430>
     8020038c:	ce5ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  epc      0x%08x\n", tf->epc);
+    cprintf("trapframe at %p\n", tf);
     80200390:	10843583          	ld	a1,264(s0)
     80200394:	00001517          	auipc	a0,0x1
     80200398:	adc50513          	addi	a0,a0,-1316 # 80200e70 <etext+0x448>
     8020039c:	cd5ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  badvaddr 0x%08x\n", tf->badvaddr);
+    print_regs(&tf->gpr);
     802003a0:	11043583          	ld	a1,272(s0)
     802003a4:	00001517          	auipc	a0,0x1
     802003a8:	ae450513          	addi	a0,a0,-1308 # 80200e88 <etext+0x460>
     802003ac:	cc5ff0ef          	jal	ra,80200070 <cprintf>
-    cprintf("  cause    0x%08x\n", tf->cause);
+    cprintf("  status   0x%08x\n", tf->status);
     802003b0:	11843583          	ld	a1,280(s0)
-}
+    cprintf("  epc      0x%08x\n", tf->epc);
     802003b4:	6402                	ld	s0,0(sp)
     802003b6:	60a2                	ld	ra,8(sp)
-    cprintf("  cause    0x%08x\n", tf->cause);
+    cprintf("  status   0x%08x\n", tf->status);
     802003b8:	00001517          	auipc	a0,0x1
     802003bc:	ae850513          	addi	a0,a0,-1304 # 80200ea0 <etext+0x478>
-}
+    cprintf("  epc      0x%08x\n", tf->epc);
     802003c0:	0141                	addi	sp,sp,16
-    cprintf("  cause    0x%08x\n", tf->cause);
+    cprintf("  status   0x%08x\n", tf->status);
     802003c2:	b17d                	j	80200070 <cprintf>
 
 00000000802003c4 <interrupt_handler>:
+    cprintf("  t5       0x%08x\n", gpr->t5);
+    cprintf("  t6       0x%08x\n", gpr->t6);
+}
 
-// 中断处理函数
-void interrupt_handler(struct trapframe *tf) {
-    intptr_t cause = (tf->cause << 1) >> 1;
     802003c4:	11853783          	ld	a5,280(a0)
     802003c8:	472d                	li	a4,11
     802003ca:	0786                	slli	a5,a5,0x1
@@ -468,185 +469,185 @@ void interrupt_handler(struct trapframe *tf) {
     802003e0:	97ba                	add	a5,a5,a4
     802003e2:	8782                	jr	a5
             break;
+        case IRQ_S_SOFT:
+            cprintf("Supervisor software interrupt\n");
+            break;
         case IRQ_H_SOFT:
             cprintf("Hypervisor software interrupt\n");
-            break;
-        case IRQ_M_SOFT:
-            cprintf("Machine software interrupt\n");
     802003e4:	00001517          	auipc	a0,0x1
     802003e8:	b3450513          	addi	a0,a0,-1228 # 80200f18 <etext+0x4f0>
     802003ec:	b151                	j	80200070 <cprintf>
-            cprintf("Hypervisor software interrupt\n");
+            cprintf("Supervisor software interrupt\n");
     802003ee:	00001517          	auipc	a0,0x1
     802003f2:	b0a50513          	addi	a0,a0,-1270 # 80200ef8 <etext+0x4d0>
     802003f6:	b9ad                	j	80200070 <cprintf>
-            cprintf("User software interrupt\n");
+    intptr_t cause = (tf->cause << 1) >> 1;
     802003f8:	00001517          	auipc	a0,0x1
     802003fc:	ac050513          	addi	a0,a0,-1344 # 80200eb8 <etext+0x490>
     80200400:	b985                	j	80200070 <cprintf>
-            cprintf("Supervisor software interrupt\n");
+            cprintf("User software interrupt\n");
     80200402:	00001517          	auipc	a0,0x1
     80200406:	ad650513          	addi	a0,a0,-1322 # 80200ed8 <etext+0x4b0>
     8020040a:	b19d                	j	80200070 <cprintf>
-void interrupt_handler(struct trapframe *tf) {
+}
     8020040c:	1141                	addi	sp,sp,-16
     8020040e:	e406                	sd	ra,8(sp)
+             *(1)设置下次时钟中断- clock_set_next_event()
+             *(2)计数器（ticks）加一W
+             *(3)当计数器加到100的时候，我们会输出一个`100ticks`表示我们触发了100次时钟中断，同时打印次数（num）加一
              *(4)判断打印次数，当打印次数为10时，调用<sbi.h>中的关机函数关机
             */
             //
+    80200410:	d57ff0ef          	jal	ra,80200166 <clock_set_next_event>
             //cprintf("Supervisor timer interrupt\n");//不确定该行到底是否需要，暂时注释
             //(1)设置下次时钟中断
-            clock_set_next_event();
-    80200410:	d57ff0ef          	jal	ra,80200166 <clock_set_next_event>
-            //(2)计数器（ticks）加一
-            ticks++;
     80200414:	00004797          	auipc	a5,0x4
     80200418:	bfc78793          	addi	a5,a5,-1028 # 80204010 <ticks>
     8020041c:	6398                	ld	a4,0(a5)
-            //(3)计数器为100时，输出`100ticks`，num加一
-            if(ticks==TICK_NUM)
+            clock_set_next_event();
+            //(2)计数器（ticks）加一
     8020041e:	06400693          	li	a3,100
-            ticks++;
+            //(1)设置下次时钟中断
     80200422:	0705                	addi	a4,a4,1
     80200424:	e398                	sd	a4,0(a5)
-            if(ticks==TICK_NUM)
+            //(2)计数器（ticks）加一
     80200426:	639c                	ld	a5,0(a5)
     80200428:	00d78b63          	beq	a5,a3,8020043e <interrupt_handler+0x7a>
             break;
+        case IRQ_M_EXT:
+            cprintf("Machine software interrupt\n");
+            break;
         default:
             print_trapframe(tf);
-            break;
-    }
-}
     8020042c:	60a2                	ld	ra,8(sp)
     8020042e:	0141                	addi	sp,sp,16
     80200430:	8082                	ret
-            cprintf("Supervisor external interrupt\n");
+            cprintf("User software interrupt\n");
     80200432:	00001517          	auipc	a0,0x1
     80200436:	b1650513          	addi	a0,a0,-1258 # 80200f48 <etext+0x520>
     8020043a:	b91d                	j	80200070 <cprintf>
-            print_trapframe(tf);
+            cprintf("Machine software interrupt\n");
     8020043c:	b725                	j	80200364 <print_trapframe>
     cprintf("%d ticks\n", TICK_NUM);
     8020043e:	06400593          	li	a1,100
     80200442:	00001517          	auipc	a0,0x1
     80200446:	af650513          	addi	a0,a0,-1290 # 80200f38 <etext+0x510>
     8020044a:	c27ff0ef          	jal	ra,80200070 <cprintf>
-                ticks=0;
+            if(ticks==TICK_NUM)
     8020044e:	00004797          	auipc	a5,0x4
     80200452:	bc07b123          	sd	zero,-1086(a5) # 80204010 <ticks>
-                num++;
+            {
     80200456:	00004797          	auipc	a5,0x4
     8020045a:	bc278793          	addi	a5,a5,-1086 # 80204018 <num>
     8020045e:	6398                	ld	a4,0(a5)
-                if(num==10) sbi_shutdown();
+                ticks=0;
     80200460:	46a9                	li	a3,10
-                num++;
+            {
     80200462:	0705                	addi	a4,a4,1
     80200464:	e398                	sd	a4,0(a5)
-                if(num==10) sbi_shutdown();
+                ticks=0;
     80200466:	639c                	ld	a5,0(a5)
     80200468:	fcd792e3          	bne	a5,a3,8020042c <interrupt_handler+0x68>
-}
+            print_trapframe(tf);
     8020046c:	60a2                	ld	ra,8(sp)
     8020046e:	0141                	addi	sp,sp,16
-                if(num==10) sbi_shutdown();
+                ticks=0;
     80200470:	ab85                	j	802009e0 <sbi_shutdown>
 
 0000000080200472 <exception_handler>:
+            break;
+    }
+}
 
-// 异常处理函数
-void exception_handler(struct trapframe *tf) {
-    switch (tf->cause) {
     80200472:	11853783          	ld	a5,280(a0)
-void exception_handler(struct trapframe *tf) {
+}
     80200476:	1141                	addi	sp,sp,-16
     80200478:	e022                	sd	s0,0(sp)
     8020047a:	e406                	sd	ra,8(sp)
-    switch (tf->cause) {
+
     8020047c:	470d                	li	a4,3
-void exception_handler(struct trapframe *tf) {
+}
     8020047e:	842a                	mv	s0,a0
-    switch (tf->cause) {
+
     80200480:	04e78663          	beq	a5,a4,802004cc <exception_handler+0x5a>
     80200484:	02f76c63          	bltu	a4,a5,802004bc <exception_handler+0x4a>
     80200488:	4709                	li	a4,2
     8020048a:	02e79563          	bne	a5,a4,802004b4 <exception_handler+0x42>
+        case CAUSE_ILLEGAL_INSTRUCTION:
+             // 非法指令异常处理
+             /* LAB1 CHALLENGE3   2210705 CODE :  */
             /*(1)输出指令异常类型（Illegal instruction）
              *(2)输出异常指令地址
              *(3)更新 tf->epc寄存器
-            */
-            //输出指令异常类型：Illegal instruction
-            cprintf("Exception type: Illegal instruction\n");
     8020048e:	00001517          	auipc	a0,0x1
     80200492:	b0a50513          	addi	a0,a0,-1270 # 80200f98 <etext+0x570>
     80200496:	bdbff0ef          	jal	ra,80200070 <cprintf>
-            //输出异常指令地址（"%08x":输出用0填充至8个字符的十六进制数）
-            cprintf("Illegal instruction caught at 0x%08x\n", tf->epc);
+            */
+            //输出指令异常类型：Illegal instruction
     8020049a:	10843583          	ld	a1,264(s0)
     8020049e:	00001517          	auipc	a0,0x1
     802004a2:	b2250513          	addi	a0,a0,-1246 # 80200fc0 <etext+0x598>
     802004a6:	bcbff0ef          	jal	ra,80200070 <cprintf>
-            //更新 tf->epc寄存器
-            tf->epc+=4;
+            cprintf("Exception type: Illegal instruction\n");
+            //输出异常指令地址（"%08x":输出用0填充至8个字符的十六进制数）
     802004aa:	10843783          	ld	a5,264(s0)
     802004ae:	0791                	addi	a5,a5,4
     802004b0:	10f43423          	sd	a5,264(s0)
+        case CAUSE_HYPERVISOR_ECALL:
+            break;
+        case CAUSE_MACHINE_ECALL:
             break;
         default:
             print_trapframe(tf);
-            break;
-    }
-}
     802004b4:	60a2                	ld	ra,8(sp)
     802004b6:	6402                	ld	s0,0(sp)
     802004b8:	0141                	addi	sp,sp,16
     802004ba:	8082                	ret
-    switch (tf->cause) {
+
     802004bc:	17f1                	addi	a5,a5,-4
     802004be:	471d                	li	a4,7
     802004c0:	fef77ae3          	bgeu	a4,a5,802004b4 <exception_handler+0x42>
-}
+            print_trapframe(tf);
     802004c4:	6402                	ld	s0,0(sp)
     802004c6:	60a2                	ld	ra,8(sp)
     802004c8:	0141                	addi	sp,sp,16
-            print_trapframe(tf);
+        case CAUSE_MACHINE_ECALL:
     802004ca:	bd69                	j	80200364 <print_trapframe>
-            cprintf("Exception type: breakpoint\n");
+             *(3)更新 tf->epc寄存器
     802004cc:	00001517          	auipc	a0,0x1
     802004d0:	b1c50513          	addi	a0,a0,-1252 # 80200fe8 <etext+0x5c0>
     802004d4:	b9dff0ef          	jal	ra,80200070 <cprintf>
-            cprintf("ebreak caught at 0x%08x\n", tf->epc);
+            //输出指令异常类型:breakpoint
     802004d8:	10843583          	ld	a1,264(s0)
     802004dc:	00001517          	auipc	a0,0x1
     802004e0:	b2c50513          	addi	a0,a0,-1236 # 80201008 <etext+0x5e0>
     802004e4:	b8dff0ef          	jal	ra,80200070 <cprintf>
-            tf->epc+=2;
+            //输出异常指令地址
     802004e8:	10843783          	ld	a5,264(s0)
-}
+            print_trapframe(tf);
     802004ec:	60a2                	ld	ra,8(sp)
-            tf->epc+=2;
+            //输出异常指令地址
     802004ee:	0789                	addi	a5,a5,2
     802004f0:	10f43423          	sd	a5,264(s0)
-}
+            print_trapframe(tf);
     802004f4:	6402                	ld	s0,0(sp)
     802004f6:	0141                	addi	sp,sp,16
     802004f8:	8082                	ret
 
 00000000802004fa <trap>:
+            break;
+    }
+}
 
+    802004fa:	11853783          	ld	a5,280(a0)
+    802004fe:	0007c363          	bltz	a5,80200504 <trap+0xa>
 /* trap_dispatch - 根据发生的陷入类型进行调度 */
 static inline void trap_dispatch(struct trapframe *tf) {
     if ((intptr_t)tf->cause < 0) {
-    802004fa:	11853783          	ld	a5,280(a0)
-    802004fe:	0007c363          	bltz	a5,80200504 <trap+0xa>
         // 中断
         interrupt_handler(tf);
-    } else {
-        // 异常
-        exception_handler(tf);
     80200502:	bf85                	j	80200472 <exception_handler>
-        interrupt_handler(tf);
+static inline void trap_dispatch(struct trapframe *tf) {
     80200504:	b5c1                	j	802003c4 <interrupt_handler>
 	...
 
@@ -1150,9 +1151,9 @@ void sbi_console_putchar(unsigned char ch) {
     802009d8:	00000073          	ecall
     802009dc:	87aa                	mv	a5,a0
 
+//当time寄存器(rdtime的返回值)为stime_value的时候触发一个时钟中断
 void sbi_set_timer(unsigned long long stime_value) {
     sbi_call(SBI_SET_TIMER, stime_value, 0, 0);
-}
     802009de:	8082                	ret
 
 00000000802009e0 <sbi_shutdown>:
@@ -1166,6 +1167,7 @@ void sbi_set_timer(unsigned long long stime_value) {
     802009f0:	863e                	mv	a2,a5
     802009f2:	00000073          	ecall
     802009f6:	87aa                	mv	a5,a0
+}
 
 
 void sbi_shutdown(void)
