@@ -36,8 +36,7 @@ int kern_init(void) {
 
 
     /* do nothing */
-    while (1)
-        ;
+    while (1) {}
 }
 
 void __attribute__((noinline))

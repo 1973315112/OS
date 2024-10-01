@@ -28,15 +28,14 @@ typedef uintptr_t pte_t;
 typedef uintptr_t pde_t;
 
 /* *
- * struct Page - Page descriptor structures. Each Page describes one
- * physical page. In kern/mm/pmm.h, you can find lots of useful functions
- * that convert Page to other data types, such as physical address.
+ * struct Page-页面描述符结构。每个页面描述一个物理页面。
+ * 在kern/mm/pmm.h中，您可以找到许多将Page转换为其他数据类型（如物理地址）的有用函数。
  * */
 struct Page {
-    int ref;                        // page frame's reference counter
-    uint64_t flags;                 // array of flags that describe the status of the page frame
-    unsigned int property;          // the num of free block, used in first fit pm manager
-    list_entry_t page_link;         // free list link
+    int ref;                        // 页框(物理页)的引用计数器
+    uint64_t flags;                 // 描述页框(物理页)状态的标志数组
+    unsigned int property;          // 空闲块数（first-fit中使用，used in first fit pm manager）
+    list_entry_t page_link;         // 空闲列表链接
 };
 
 /* Flags describing the status of a page frame */

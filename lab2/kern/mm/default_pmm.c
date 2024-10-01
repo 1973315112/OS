@@ -3,57 +3,56 @@
 #include <string.h>
 #include <default_pmm.h>
 
-/* In the first fit algorithm, the allocator keeps a list of free blocks (known as the free list) and,
-   on receiving a request for memory, scans along the list for the first block that is large enough to
-   satisfy the request. If the chosen block is significantly larger than that requested, then it is 
-   usually split, and the remainder added to the list as another free block.
-   Please see Page 196~198, Section 8.2 of Yan Wei Min's chinese book "Data Structure -- C programming language"
+/*
+    在first-fit算法中，分配器保留一个空闲块链表（称为空闲链表），在收到内存分配请求后，沿着链表扫描第一个足够大的满足请求的块，
+    如果所选块明显大于请求的块，则通常会拆分，其余部分作为另一个空闲块添加到链表中。
+    请参阅严伟民中文著作《数据结构——C编程语言》第8.2节第196~198页
 */
-// you should rewrite functions: default_init,default_init_memmap,default_alloc_pages, default_free_pages.
+// 您应该重写函数：default_init(),default_init_memmap(),default_alloc_pages(), default_free_pages().
 /*
  * Details of FFMA
- * (1) Prepare: In order to implement the First-Fit Mem Alloc (FFMA), we should manage the free mem block use some list.
- *              The struct free_area_t is used for the management of free mem blocks. At first you should
- *              be familiar to the struct list in list.h. struct list is a simple doubly linked list implementation.
- *              You should know howto USE: list_init, list_add(list_add_after), list_add_before, list_del, list_next, list_prev
- *              Another tricky method is to transform a general list struct to a special struct (such as struct page):
- *              you can find some MACRO: le2page (in memlayout.h), (in future labs: le2vma (in vmm.h), le2proc (in proc.h),etc.)
- * (2) default_init: you can reuse the  demo default_init fun to init the free_list and set nr_free to 0.
- *              free_list is used to record the free mem blocks. nr_free is the total number for free mem blocks.
- * (3) default_init_memmap:  CALL GRAPH: kern_init --> pmm_init-->page_init-->init_memmap--> pmm_manager->init_memmap
- *              This fun is used to init a free block (with parameter: addr_base, page_number).
- *              First you should init each page (in memlayout.h) in this free block, include:
- *                  p->flags should be set bit PG_property (means this page is valid. In pmm_init fun (in pmm.c),
- *                  the bit PG_reserved is setted in p->flags)
- *                  if this page  is free and is not the first page of free block, p->property should be set to 0.
- *                  if this page  is free and is the first page of free block, p->property should be set to total num of block.
- *                  p->ref should be 0, because now p is free and no reference.
- *                  We can use p->page_link to link this page to free_list, (such as: list_add_before(&free_list, &(p->page_link)); )
- *              Finally, we should sum the number of free mem block: nr_free+=n
- * (4) default_alloc_pages: search find a first free block (block size >=n) in free list and reszie the free block, return the addr
- *              of malloced block.
- *              (4.1) So you should search freelist like this:
- *                       list_entry_t le = &free_list;
- *                       while((le=list_next(le)) != &free_list) {
- *                       ....
- *                 (4.1.1) In while loop, get the struct page and check the p->property (record the num of free block) >=n?
- *                       struct Page *p = le2page(le, page_link);
- *                       if(p->property >= n){ ...
- *                 (4.1.2) If we find this p, then it' means we find a free block(block size >=n), and the first n pages can be malloced.
- *                     Some flag bits of this page should be setted: PG_reserved =1, PG_property =0
- *                     unlink the pages from free_list
- *                     (4.1.2.1) If (p->property >n), we should re-caluclate number of the the rest of this free block,
- *                           (such as: le2page(le,page_link))->property = p->property - n;)
- *                 (4.1.3)  re-caluclate nr_free (number of the the rest of all free block)
- *                 (4.1.4)  return p
- *               (4.2) If we can not find a free block (block size >=n), then return NULL
- * (5) default_free_pages: relink the pages into  free list, maybe merge small free blocks into big free blocks.
+ * (1) 准备：为了实现First Fit内存分配算法（First Fit Mem Alloc,FFMA），我们应该使用一些链表来管理空闲内存块。
+ *          使用结构体free_area_t用于管理空闲内存块。首先，您应该熟悉list.h中的结构体链表。struct list是一个简单的双链表实现。
+ *          你应该知道如何使用：list_init()、list_add()（list_add_after() ）、list_add_before()、list_del()、list_next()、list_prev()
+ *          另一个困难的问题是如何将一个通用的链表结构体转换为一个特殊的结构体（如页表结构体）：
+ *          你可以找到一些宏定义:le2page（在memlayout.h中)(在未来的lab中：le2vma（在vmm.h中）,le2proc（在proc.h中）等。）
+ * (2) default_init()：您可以重用示例default_init()函数来初始化freelist并将nrfree设置为0。
+ *                     freelist用于记录空闲的内存块。nrfree是空闲内存块的总数。
+ * (3) default_init_memmap():调用顺序：kern_init --> pmm_init-->page_init-->init_memmap--> pmm_manager->init_memmap
+ *                          此函数用于初始化空闲块（参数为：addr_base，page_number）。
+ *                          首先，你应该初始化这个空闲块中的每个页面（在memlayout.h中），包括：
+ *                          p->flags应设置为位PG_property（表示此页面有效。在pmm.c中的pmm_init()函数中，位PG_reserved设置在p->flags中。
+ *                          如果此页面是空闲的，并且不是空闲块的第一页，则p->property应设置为0。
+ *                          如果此页面是空闲的，并且是空闲块的第一页，则p->property应设置为块的总数。
+ *                          p->ref应该是0，因为现在p是空闲的，没有引用。
+ *                          我们可以使用p->page_link将此页面链接到free_list（例如：list_add_before（&free_list，&（p->page-link））；）
+ *                          最后，我们应该将空闲内存块的数量相加：nr_free+=n
+ * (4) default_alloc_pages()：在空闲列表中搜索第一个空闲块（块大小>=n），并对空闲块进行reszie，返回分配的块的地址。
+ *                         （4.1）所以你应该这样搜索freelist：
+ *                                  list_entry_t le = &free_list;
+ *                                  while((le=list_next(le)) != &free_list) {
+ *                                  ....
+ *                              (4.1.1) 在while循环中，获取结构体页面并检查p->property（记录空闲块的数量）是否>=n
+ *                                      struct Page *p = le2page(le, page_link);
+ *                                      if(p->property >= n){ ...
+ *                              (4.1.2) 如果我们找到这个p，那么这意味着我们找到了一个空闲块（块大小>=n），并且前n个页面可以被分配。
+ *                                      应设置此页面的某些标志位： PG_reserved =1, PG_property =0
+ *                                      取消页面与free_list的链接
+ *                                      (4.1.2.1) 如果（p->property>n），我们应该重新计算这个空闲块剩余部分的块数(例如:le2page(le,page_link))->property = p->property - n;)
+ *                              (4.1.3) 重新计算nr_free（所有空闲块剩余部分的数量）
+ *                              (4.1.4) 返回p
+ *                           (4.2) 如果我们找不到空闲块（块大小>=n），则返回NULL
+ *(5) default_free_pages(): relink the pages into  free list, maybe merge small free blocks into big free blocks.
  *               (5.1) according the base addr of withdrawed blocks, search free list, find the correct position
  *                     (from low to high addr), and insert the pages. (may use list_next, le2page, list_add_before)
  *               (5.2) reset the fields of pages, such as p->ref, p->flags (PageProperty)
  *               (5.3) try to merge low addr or high addr blocks. Notice: should change some pages's p->property correctly.
+ * (5) default_free_pages()：将页面重新链接到自由链表中，可能会将小空闲块合并为大空闲块。
+ *                          (5.1) 根据释放区块的基址，搜索空闲列表，找到正确的位置(从低到高地址），并插入页表。（可以使用list_next()、le2page()、list_add_before() ）
+ *                          (5.2) 重新设置页面的属性，如p->ref, p->flags (PageProperty)
+ *                          (5.3) 尝试合并低地址或高地址块。注意：应该正确更改某些页面的p->property。
  */
-free_area_t free_area;
+static free_area_t free_area;
 
 #define free_list (free_area.free_list)
 #define nr_free (free_area.nr_free)
@@ -177,6 +176,7 @@ default_nr_free_pages(void) {
     return nr_free;
 }
 
+// 注意：您不应该更改basic_check！！！
 static void
 basic_check(void) {
     struct Page *p0, *p1, *p2;
@@ -228,8 +228,8 @@ basic_check(void) {
     free_page(p2);
 }
 
-// LAB2: below code is used to check the first fit allocation algorithm
-// NOTICE: You SHOULD NOT CHANGE basic_check, default_check functions!
+// LAB2：以下代码用于检查first-fit内存分配算法
+// 注意：您不应该更改basic_check、default_check函数！
 static void
 default_check(void) {
     int count = 0, total = 0;
