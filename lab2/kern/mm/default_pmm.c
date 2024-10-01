@@ -21,7 +21,7 @@
  * (3) default_init_memmap():调用顺序：kern_init --> pmm_init-->page_init-->init_memmap--> pmm_manager->init_memmap
  *                          此函数用于初始化空闲块（参数为：addr_base，page_number）。
  *                          首先，你应该初始化这个空闲块中的每个页面（在memlayout.h中），包括：
- *                          p->flags应设置为位PG_property（表示此页面有效。在pmm.c中的pmm_init()函数中，位PG_reserved设置在p->flags中。
+ *                          p->flags应设置为位PG_property（表示此页面有效。在pmm.c中的pmm_init()函数中，位PG_reserved设置在p->flags中。)
  *                          如果此页面是空闲的，并且不是空闲块的第一页，则p->property应设置为0。
  *                          如果此页面是空闲的，并且是空闲块的第一页，则p->property应设置为块的总数。
  *                          p->ref应该是0，因为现在p是空闲的，没有引用。

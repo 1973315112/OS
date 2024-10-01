@@ -28,35 +28,39 @@ typedef uintptr_t pte_t;
 typedef uintptr_t pde_t;
 
 /* *
- * struct Page-页面描述符结构。每个页面描述一个物理页面。
+ * struct Page-页面描述符结构。每个页面描述一个页框(物理页)。
  * 在kern/mm/pmm.h中，您可以找到许多将Page转换为其他数据类型（如物理地址）的有用函数。
  * */
 struct Page {
     int ref;                        // 页框(物理页)的引用计数器
     uint64_t flags;                 // 描述页框(物理页)状态的标志数组
     unsigned int property;          // 空闲块数（first-fit中使用，used in first fit pm manager）
-    list_entry_t page_link;         // 空闲列表链接
+    list_entry_t page_link;         // 空闲链表链接(功能:用该节点进行链表相关操作，类型:链表节点结构体)
 };
 
-/* Flags describing the status of a page frame */
-#define PG_reserved                 0       // if this bit=1: the Page is reserved for kernel, cannot be used in alloc/free_pages; otherwise, this bit=0 
+/* 描述页框(物理页)状态的标志Flags */
+#define PG_reserved                 0       // 如果该bit=1：页面是为内核保留的，不能在alloc/free_pages中使用；否则，此位该bit=0
 #define PG_property                 1       // if this bit=1: the Page is the head page of a free memory block(contains some continuous_addrress pages), and can be used in alloc_pages; if this bit=0: if the Page is the the head page of a free memory block, then this Page and the memory block is alloced. Or this Page isn't the head page.
-
-#define SetPageReserved(page)       set_bit(PG_reserved, &((page)->flags))
+                                            //如果该bit=1：Page是空闲内存块的首页（包含一些连续的地址页），可以在alloc_pages中使用；
+                                            //如果该bit=0：如果Page是空闲内存块的首页，则分配此Page和内存块。或者这个页面不是首页。
+                                            
+#define SetPageReserved(page)       set_bit(PG_reserved, &((page)->flags))   //将该bit设为1，为内核保留页面
 #define ClearPageReserved(page)     clear_bit(PG_reserved, &((page)->flags))
 #define PageReserved(page)          test_bit(PG_reserved, &((page)->flags))
 #define SetPageProperty(page)       set_bit(PG_property, &((page)->flags))
 #define ClearPageProperty(page)     clear_bit(PG_property, &((page)->flags))
 #define PageProperty(page)          test_bit(PG_property, &((page)->flags))
 
-// convert list entry to page
+// 将链表节点转换为页框(物理页，Page类型结构体)
 #define le2page(le, member)                 \
     to_struct((le), struct Page, member)
 
-/* free_area_t - maintains a doubly linked list to record free (unused) pages */
+/* free_area_t - maintains a doubly linked list to record free (unused) pages 
+ * 功能:维护一个双向链表来记录空闲（未使用）页框(物理页)
+ */
 typedef struct {
-    list_entry_t free_list;         // the list header
-    unsigned int nr_free;           // number of free pages in this free list
+    list_entry_t free_list;         // 链表头节点
+    unsigned int nr_free;           // 此空闲链表中的可用页框(物理页)数
 } free_area_t;
 
 #endif /* !__ASSEMBLER__ */

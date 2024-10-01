@@ -1,8 +1,10 @@
 #ifndef __LIBS_ATOMIC_H__
 #define __LIBS_ATOMIC_H__
 
-/* Atomic operations that C can't guarantee us. Useful for resource counting
- * etc.. */
+/* C无法保证的原子操作,可用于资源计数等 */
+/*
+ * 本文件定义了对一个二进制位进行读写的原子操作，确保相关操作不被中断打断。
+ */
 
 static inline void set_bit(int nr, volatile void *addr)
     __attribute__((always_inline));
@@ -51,6 +53,7 @@ static inline bool test_and_clear_bit(int nr, volatile void *addr)
 
 /* *
  * set_bit - Atomically set a bit in memory
+ * 功能:设置某个二进制位的值为1
  * @nr:     the bit to set
  * @addr:   the address to start counting from
  *
@@ -72,6 +75,7 @@ static inline void clear_bit(int nr, volatile void *addr) {
 
 /* *
  * change_bit - Atomically toggle a bit in memory
+ * 功能:给某个二进制位取反 
  * @nr:     the bit to change
  * @addr:   the address to start counting from
  * */
@@ -81,6 +85,7 @@ static inline void change_bit(int nr, volatile void *addr) {
 
 /* *
  * test_bit - Determine whether a bit is set
+ * 功能:返回某个二进制位的值 
  * @nr:     the bit to test
  * @addr:   the address to count from
  * */

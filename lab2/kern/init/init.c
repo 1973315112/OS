@@ -16,26 +16,19 @@ void grade_backtrace(void);
 int kern_init(void) {
     extern char edata[], end[];
     memset(edata, 0, end - edata);
-    cons_init();  // init the console
+    cons_init();  // 初始化命令行
     const char *message = "(THU.CST) os is loading ...\0";
     //cprintf("%s\n\n", message);
     cputs(message);
-
-    print_kerninfo();
-
+    print_kerninfo(); // 打印核心信息
     // grade_backtrace();
-    idt_init();  // init interrupt descriptor table
+    idt_init();  // 初始化中断描述符表
 
-    pmm_init();  // init physical memory management
+    pmm_init();  // 初始化物理内存管理器(本次的核心)
 
-    idt_init();  // init interrupt descriptor table
-
-    clock_init();   // init clock interrupt
-    intr_enable();  // enable irq interrupt
-
-
-
-    /* do nothing */
+    idt_init();  // 初始化中断描述符表
+    clock_init();   // 初始化时钟中断
+    intr_enable();  // 启用中断请求
     while (1) {}
 }
 

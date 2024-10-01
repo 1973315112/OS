@@ -8,28 +8,24 @@
 #include <mmu.h>
 #include <riscv.h>
 
-// pmm_manager is a physical memory management class. A special pmm manager -
-// XXX_pmm_manager
-// only needs to implement the methods in pmm_manager class, then
-// XXX_pmm_manager can be used
-// by ucore to manage the total physical memory space.
+/*
+ * pmm_manager是一个物理内存管理类。
+ * 一个特定(special)的pmm管理器(XXX_pmm_manager)只需要实现pmm_manager类中的方法，
+ * 那么ucore就可以使用XXX_pmm_manager来管理整个物理内存空间。
+ * 注意:让函数指针作为结构体的成员，在C语言里支持了类似”成员函数“的效果
+ */
 struct pmm_manager {
-    const char *name;  // XXX_pmm_manager's name
+    const char *name;  // XXX_pmm_manager的名字
     void (*init)(
-        void);  // initialize internal description&management data structure
-                // (free block list, number of free block) of XXX_pmm_manager
+        void);  // 初始化XXX_pm_manager的内部描述符和管理数据结构（空闲块链表、空闲块数量）
     void (*init_memmap)(
         struct Page *base,
-        size_t n);  // setup description&management data structcure according to
-                    // the initial free physical memory space
+        size_t n);  // 根据物理内存空间设置描述符和管理数据结构(知道了可用的物理页面数目之后，进行更详细的初始化)
     struct Page *(*alloc_pages)(
-        size_t n);  // allocate >=n pages, depend on the allocation algorithm
-    void (*free_pages)(struct Page *base, size_t n);  // free >=n pages with
-                                                      // "base" addr of Page
-                                                      // descriptor
-                                                      // structures(memlayout.h)
-    size_t (*nr_free_pages)(void);  // return the number of free pages
-    void (*check)(void);            // check the correctness of XXX_pmm_manager
+        size_t n);  // 分配至少n页的物理内存，具体取决于分配算法（分配至少n个物理页面, 根据分配算法可能返回不同的结果）
+    void (*free_pages)(struct Page *base, size_t n);  // 释放至少n页的内存，具有页面描述符结构（memlayout.h）的“base”地址
+    size_t (*nr_free_pages)(void);  // 返回空闲物理页面的数目
+    void (*check)(void);            // 测试XXX_pmm_manager的正确性 
 };
 
 extern const struct pmm_manager *pmm_manager;
@@ -47,10 +43,10 @@ size_t nr_free_pages(void); // number of free pages
 /* *
  * PADDR - takes a kernel virtual address (an address that points above
  * KERNBASE),
- * where the machine's maximum 256MB of physical memory is mapped and returns
- * the
- * corresponding physical address.  It panics if you pass it a non-kernel
- * virtual address.
+ * 功能:接受一个内核虚拟地址（指向KERNBASE(内核基地址)之上的地址）,其中映射了机器最大256MB的物理内存，
+ *      并返回相应的物理地址。如果你传递一个非内核虚拟地址，它会出错（panics）。
+ * 参数:
+ * @kva:        内核虚拟地址
  * */
 #define PADDR(kva)                                                 \
     ({                                                             \
