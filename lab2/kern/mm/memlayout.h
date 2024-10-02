@@ -31,7 +31,8 @@ typedef uintptr_t pde_t;
  * struct Page-页面描述符结构。每个页面描述一个页框(物理页)。
  * 在kern/mm/pmm.h中，您可以找到许多将Page转换为其他数据类型（如物理地址）的有用函数。
  * */
-struct Page {
+struct Page 
+{
     int ref;                        // 页框(物理页)的引用计数器
     uint64_t flags;                 // 描述页框(物理页)状态的标志数组
     unsigned int property;          // 空闲块数（first-fit中使用，used in first fit pm manager）
@@ -42,14 +43,14 @@ struct Page {
 #define PG_reserved                 0       // 如果该bit=1：页面是为内核保留的，不能在alloc/free_pages中使用；否则，此位该bit=0
 #define PG_property                 1       // if this bit=1: the Page is the head page of a free memory block(contains some continuous_addrress pages), and can be used in alloc_pages; if this bit=0: if the Page is the the head page of a free memory block, then this Page and the memory block is alloced. Or this Page isn't the head page.
                                             //如果该bit=1：Page是空闲内存块的首页（包含一些连续的地址页），可以在alloc_pages中使用；
-                                            //如果该bit=0：如果Page是空闲内存块的首页，则分配此Page和内存块。或者这个页面不是首页。
+                                            //如果该bit=0：如果Page是空闲内存块的首页，则此Page和内存块已经被分配。或者这个页面不是首页。
                                             
 #define SetPageReserved(page)       set_bit(PG_reserved, &((page)->flags))   //将该bit设为1，为内核保留页面
 #define ClearPageReserved(page)     clear_bit(PG_reserved, &((page)->flags))
-#define PageReserved(page)          test_bit(PG_reserved, &((page)->flags))
-#define SetPageProperty(page)       set_bit(PG_property, &((page)->flags))
-#define ClearPageProperty(page)     clear_bit(PG_property, &((page)->flags))
-#define PageProperty(page)          test_bit(PG_property, &((page)->flags))
+#define PageReserved(page)          test_bit(PG_reserved, &((page)->flags))  //检查该bit是否为1（是否是为内核保留页面）
+#define SetPageProperty(page)       set_bit(PG_property, &((page)->flags))   //该块状态变为空闲(释放或者前部分被使用):将该bit设为1，Page是空闲内存块的首页（包含一些连续的地址页），可以在alloc_pages中使用；
+#define ClearPageProperty(page)     clear_bit(PG_property, &((page)->flags)) //该块状态变为占用(分配或者该块被前部分合并）:将该bit设为0：如果Page是空闲内存块的首页，则此Page和内存块已经被分配。或者这个页面不是首页
+#define PageProperty(page)          test_bit(PG_property, &((page)->flags))  //检查该块是否空闲:该bit为1，Page是空闲内存块的首页（包含一些连续的地址页），可以在alloc_pages中使用；
 
 // 将链表节点转换为页框(物理页，Page类型结构体)
 #define le2page(le, member)                 \

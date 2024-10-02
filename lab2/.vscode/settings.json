@@ -1,6 +1,12 @@
 {
     "files.associations": {
         "list.h": "c",
-        "riscv.h": "c"
+        "riscv.h": "c",
+        "buddy_system_pmm.h": "c",
+        "stdio.h": "c",
+        "defs.h": "c",
+        "math.h": "c",
+        "best_fit_pmm.h": "c",
+        "slub_pmm.h": "c"
     }
 }
