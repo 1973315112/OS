@@ -9,14 +9,14 @@
 //pre define
 struct mm_struct;
 
-// the virtual continuous memory area(vma), [vm_start, vm_end), 
-// addr belong to a vma means  vma.vm_start<= addr <vma.vm_end 
+// 虚拟连续存储区（vma），[vm_start，vm_end），
+// addr属于vma意味着vma.vm_start<= addr <vma.vm_end
 struct vma_struct {
-    struct mm_struct *vm_mm; // the set of vma using the same PDT 
-    uintptr_t vm_start;      // start addr of vma      
-    uintptr_t vm_end;        // end addr of vma, not include the vm_end itself
-    uint_t vm_flags;       // flags of vma
-    list_entry_t list_link;  // linear list link which sorted by start addr of vma
+    struct mm_struct *vm_mm; // 使用相同PDT的vma集合
+    uintptr_t vm_start;      // vma的起始地址    
+    uintptr_t vm_end;        // vma的结束地址，不包括vm_end本身
+    uint_t vm_flags;         // vma标志
+    list_entry_t list_link;  // 按vma起始地址排序的有序链表
 };
 
 #define le2vma(le, member)                  \
@@ -26,13 +26,13 @@ struct vma_struct {
 #define VM_WRITE                0x00000002
 #define VM_EXEC                 0x00000004
 
-// the control struct for a set of vma using the same PDT
+// 使用相同PDT的一组vma的控制结构(the control struct for a set of vma using the same PDT)
 struct mm_struct {
-    list_entry_t mmap_list;        // linear list link which sorted by start addr of vma
-    struct vma_struct *mmap_cache; // current accessed vma, used for speed purpose
-    pde_t *pgdir;                  // the PDT of these vma
-    int map_count;                 // the count of these vma
-    void *sm_priv;                   // the private data for swap manager
+    list_entry_t mmap_list;        // 按vma起始地址排序的有序链表
+    struct vma_struct *mmap_cache; // 当前访问的vma，出于速度考虑(used for speed purpose)
+    pde_t *pgdir;                  // 这些vma的PDT
+    int map_count;                 // 这些vma的数量
+    void *sm_priv;                 // swap管理器的私有数据
 };
 
 struct vma_struct *find_vma(struct mm_struct *mm, uintptr_t addr);

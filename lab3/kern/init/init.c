@@ -24,26 +24,19 @@ kern_init(void) {
     const char *message = "(THU.CST) os is loading ...";
     cprintf("%s\n\n", message);
 
-    print_kerninfo();
-
+    print_kerninfo();           // 打印核心信息
     // grade_backtrace();
+    pmm_init();                 // 初始化物理内存管理器
+    idt_init();                 // 初始化中断描述符表
 
-    pmm_init();                 // init physical memory management
+    vmm_init();                 // 初始化虚拟内存管理器(本次的新增)
+    ide_init();                 // 初始化磁盘设备(本次的新增)
+    swap_init();                // 初始化页面交换机制(本次的核心)
 
-    idt_init();                 // init interrupt descriptor table
-
-    vmm_init();                 // init virtual memory management
-
-    ide_init();                 // init ide devices
-    swap_init();                // init swap
-
-    clock_init();               // init clock interrupt
-    // intr_enable();              // enable irq interrupt
-
-
-
+    clock_init();               // 初始化时钟中断
+    // intr_enable();           // 启用中断请求
     /* do nothing */
-    while (1);
+    while (1) {};
 }
 
 void __attribute__((noinline))

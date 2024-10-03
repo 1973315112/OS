@@ -91,7 +91,7 @@ list_add_after(list_entry_t *listelm, list_entry_t *elm) {
 
 /* *
  * list_del - deletes entry from list
- * 功能:删除节点(尽量用list_del_init)
+ * 功能:删除节点,但仍然可以凭该节点访问删除前的前后节点
  * 参数:
  * @listelm:    被删除的节点
  *
