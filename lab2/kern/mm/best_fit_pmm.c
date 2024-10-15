@@ -75,7 +75,8 @@ best_fit_init_memmap(struct Page *base, size_t n) {
 //################################################################################
         /*LAB2 EXERCISE 2: 2210705 CODE*/ 
         // 清空当前页框的标志和属性信息，并将页框的引用计数设置为0
-
+        p->flags = p->property = 0;
+        set_page_ref(p, 0);
 //################################################################################
     }
     base->property = n;
@@ -95,7 +96,15 @@ best_fit_init_memmap(struct Page *base, size_t n) {
                1、当base < page时，找到第一个大于base的页，将base插入到它前面，并退出循环
                2、当list_next(le) == &free_list时，若已经到达链表结尾，将base插入到链表尾部
             */
-
+            if (base < page) //找到第一个大于base的页，将base插入到它前面，并退出循环
+            {
+                list_add_before(le, &(base->page_link));
+                break;
+            }
+            else if (list_next(le) == &free_list) //若已经到达链表结尾，将base插入到链表尾部
+            {
+                list_add(le, &(base->page_link));
+            }
 //################################################################################
         }
     }
