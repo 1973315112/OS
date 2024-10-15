@@ -75,8 +75,7 @@ best_fit_init_memmap(struct Page *base, size_t n) {
 //################################################################################
         /*LAB2 EXERCISE 2: 2210705 CODE*/ 
         // 清空当前页框的标志和属性信息，并将页框的引用计数设置为0
-        p->flags = p->property = 0;
-        set_page_ref(p, 0);
+
 //################################################################################
     }
     base->property = n;
@@ -96,15 +95,7 @@ best_fit_init_memmap(struct Page *base, size_t n) {
                1、当base < page时，找到第一个大于base的页，将base插入到它前面，并退出循环
                2、当list_next(le) == &free_list时，若已经到达链表结尾，将base插入到链表尾部
             */
-            if (base < page) //找到第一个大于base的页，将base插入到它前面，并退出循环
-            {
-                list_add_before(le, &(base->page_link));
-                break;
-            }
-            else if (list_next(le) == &free_list) //若已经到达链表结尾，将base插入到链表尾部
-            {
-                list_add(le, &(base->page_link));
-            }
+
 //################################################################################
         }
     }
@@ -168,8 +159,9 @@ best_fit_free_pages(struct Page *base, size_t n) {
     /* 编写代码
        具体来说就是设置当前页块的属性为释放的页块数、并将当前页块标记为已分配状态、最后增加nr_free的值
     */
-
-
+    base->property=n;
+    SetPageProperty(base);
+    nr_free+=n;
 
 //################################################################################
     if (list_empty(&free_list)) {
@@ -201,6 +193,13 @@ best_fit_free_pages(struct Page *base, size_t n) {
            4、从链表中删除当前页块
            5、将指针指向前一个空闲页块，以便继续检查合并后的连续空闲页块
         */
+        if(p+p->property==base)//1
+        {
+            p->property+=base->property;//2
+            ClearPageProperty(base);//3
+            list_del(&(base->page_link));//4
+            base=p;//5
+        }
 
 //################################################################################
     }
