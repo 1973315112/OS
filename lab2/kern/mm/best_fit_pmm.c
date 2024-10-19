@@ -126,15 +126,17 @@ best_fit_alloc_pages(size_t n) {
        遍历空闲链表，查找满足需求的空闲页框
        如果找到满足需求的页面，记录该页面以及当前找到的最小连续空闲页框数量
     */
-    while ((le = list_next(le)) != &free_list) //遍历空闲链表
+    while ((le = list_next(le)) != &free_list) 
     {
         struct Page *p = le2page(le, page_link);
-        if (p->property >= n && p->property < min_size) //查找满足需求的空闲页框
+        //查找满足需求的空闲页框
+        if (p->property >= n && p->property < min_size) 
         {
             //如果找到满足需求的页面，记录该页面以及当前找到的最小连续空闲页框数量
             page = p;
-            min_size = n;
-            //break; 相对于first-fit，删除了break，实现遍历链表找到最小的，而不是找第一个
+            min_size = p->property;
+            //相对于first-fit，删除了break，实现遍历链表找到最小的，而不是找第一个
+            //break;
         }
     }
 //################################################################################
@@ -168,10 +170,9 @@ best_fit_free_pages(struct Page *base, size_t n) {
     /* 编写代码
        具体来说就是设置当前页块的属性为释放的页块数、并将当前页块标记为已分配状态、最后增加nr_free的值
     */
-    base->property=n;
-    SetPageProperty(base);
-    nr_free+=n;
-
+    base->property = n;      //设置当前页块的属性为释放的页块数
+    SetPageProperty(base);   //将当前页块标记为已分配状态
+    nr_free += n;            //最后增加nr_free的值
 //################################################################################
     if (list_empty(&free_list)) {
         list_add(&free_list, &(base->page_link));
@@ -202,14 +203,13 @@ best_fit_free_pages(struct Page *base, size_t n) {
            4、从链表中删除当前页块
            5、将指针指向前一个空闲页块，以便继续检查合并后的连续空闲页块
         */
-        if(p+p->property==base)//1
+        if (p + p->property == base)        //1、判断前面的空闲页块是否与当前页块是连续的，如果是连续的，则将当前页块合并到前面的空闲页块中
         {
-            p->property+=base->property;//2
-            ClearPageProperty(base);//3
-            list_del(&(base->page_link));//4
-            base=p;//5
+            p->property += base->property;  //2、首先更新前一个空闲页块的大小，加上当前页块的大小
+            ClearPageProperty(base);        //3、清除当前页块的属性标记，表示不再是空闲页块
+            list_del(&(base->page_link));   //4、从链表中删除当前页块
+            base = p;                       //5、将指针指向前一个空闲页块，以便继续检查合并后的连续空闲页块
         }
-
 //################################################################################
     }
 
