@@ -343,17 +343,17 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
      * 6.调用wakeup_proc将新的子进程的状态设为RUNNABLE
      * 7.使用子进程的pid设置返回值(ret vaule)
      */
-
-
-
-
-
-
-
-
-
-
-
+     proc=alloc_proc();//1
+     proc->parent=current;
+     proc->pid=get_pid();
+     setup_kstack(proc);//2
+     copy_mm(clone_flags,proc);//3
+     copy_thread(proc,stack,tf);//4
+     hash_proc(proc);//5
+     list_add_before(&proc_list,&proc->list_link);
+     nr_process+=1;
+     wakeup_proc(proc);//6
+     ret=proc->pid;
 
 
 //################################################################################
