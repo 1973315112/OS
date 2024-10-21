@@ -23,7 +23,7 @@ PMP1: 0x0000000000000000-0xffffffffffffffff (A,R,W,X)
 
 Special kernel symbols:
   entry  0xc0200032 (virtual)
-  etext  0xc0204e70 (virtual)
+  etext  0xc0204e62 (virtual)
   edata  0xc020a060 (virtual)
   end    0xc02155cc (virtual)
 Kernel executable memory footprint: 86KB
@@ -97,11 +97,10 @@ swap_out: i 0, store page in vaddr 0x2000 to disk swap entry 3
 swap_in: load disk swap entry 2 with swap_page in vadr 0x1000
 check_swap() succeeded!
 ++ setup timer interrupts
--------------------------here0----------------------
 this initproc, pid = 1, name = "init"
 To U: "Hello world!!".
 To U: "en.., Bye, Bye. :)"
-kernel panic at kern/process/proc.c:381:
+kernel panic at kern/process/proc.c:379:
     process exit!!.
 
 Welcome to the kernel debug monitor!!
