@@ -4877,7 +4877,7 @@ ffffffffc0202700:	00003697          	auipc	a3,0x3
 ffffffffc0202704:	bd068693          	addi	a3,a3,-1072 # ffffffffc02052d0 <commands+0xc80>
 ffffffffc0202708:	00002617          	auipc	a2,0x2
 ffffffffc020270c:	67060613          	addi	a2,a2,1648 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202710:	0a000593          	li	a1,160
+ffffffffc0202710:	09f00593          	li	a1,159
 ffffffffc0202714:	00003517          	auipc	a0,0x3
 ffffffffc0202718:	14450513          	addi	a0,a0,324 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020271c:	9e7fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4886,7 +4886,7 @@ ffffffffc0202720:	00003697          	auipc	a3,0x3
 ffffffffc0202724:	18868693          	addi	a3,a3,392 # ffffffffc02058a8 <default_pmm_manager+0x88>
 ffffffffc0202728:	00002617          	auipc	a2,0x2
 ffffffffc020272c:	65060613          	addi	a2,a2,1616 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202730:	0b700593          	li	a1,183
+ffffffffc0202730:	0b600593          	li	a1,182
 ffffffffc0202734:	00003517          	auipc	a0,0x3
 ffffffffc0202738:	12450513          	addi	a0,a0,292 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020273c:	9c7fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4895,7 +4895,7 @@ ffffffffc0202740:	00003697          	auipc	a3,0x3
 ffffffffc0202744:	14068693          	addi	a3,a3,320 # ffffffffc0205880 <default_pmm_manager+0x60>
 ffffffffc0202748:	00002617          	auipc	a2,0x2
 ffffffffc020274c:	63060613          	addi	a2,a2,1584 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202750:	0b500593          	li	a1,181
+ffffffffc0202750:	0b400593          	li	a1,180
 ffffffffc0202754:	00003517          	auipc	a0,0x3
 ffffffffc0202758:	10450513          	addi	a0,a0,260 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020275c:	9a7fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4904,7 +4904,7 @@ ffffffffc0202760:	00003697          	auipc	a3,0x3
 ffffffffc0202764:	11068693          	addi	a3,a3,272 # ffffffffc0205870 <default_pmm_manager+0x50>
 ffffffffc0202768:	00002617          	auipc	a2,0x2
 ffffffffc020276c:	61060613          	addi	a2,a2,1552 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202770:	0b400593          	li	a1,180
+ffffffffc0202770:	0b300593          	li	a1,179
 ffffffffc0202774:	00003517          	auipc	a0,0x3
 ffffffffc0202778:	0e450513          	addi	a0,a0,228 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020277c:	987fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4913,7 +4913,7 @@ ffffffffc0202780:	00003697          	auipc	a3,0x3
 ffffffffc0202784:	0f068693          	addi	a3,a3,240 # ffffffffc0205870 <default_pmm_manager+0x50>
 ffffffffc0202788:	00002617          	auipc	a2,0x2
 ffffffffc020278c:	5f060613          	addi	a2,a2,1520 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202790:	0b200593          	li	a1,178
+ffffffffc0202790:	0b100593          	li	a1,177
 ffffffffc0202794:	00003517          	auipc	a0,0x3
 ffffffffc0202798:	0c450513          	addi	a0,a0,196 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020279c:	967fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4922,7 +4922,7 @@ ffffffffc02027a0:	00003697          	auipc	a3,0x3
 ffffffffc02027a4:	0d068693          	addi	a3,a3,208 # ffffffffc0205870 <default_pmm_manager+0x50>
 ffffffffc02027a8:	00002617          	auipc	a2,0x2
 ffffffffc02027ac:	5d060613          	addi	a2,a2,1488 # ffffffffc0204d78 <commands+0x728>
-ffffffffc02027b0:	0b000593          	li	a1,176
+ffffffffc02027b0:	0af00593          	li	a1,175
 ffffffffc02027b4:	00003517          	auipc	a0,0x3
 ffffffffc02027b8:	0a450513          	addi	a0,a0,164 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc02027bc:	947fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4931,7 +4931,7 @@ ffffffffc02027c0:	00003697          	auipc	a3,0x3
 ffffffffc02027c4:	0b068693          	addi	a3,a3,176 # ffffffffc0205870 <default_pmm_manager+0x50>
 ffffffffc02027c8:	00002617          	auipc	a2,0x2
 ffffffffc02027cc:	5b060613          	addi	a2,a2,1456 # ffffffffc0204d78 <commands+0x728>
-ffffffffc02027d0:	0ae00593          	li	a1,174
+ffffffffc02027d0:	0ad00593          	li	a1,173
 ffffffffc02027d4:	00003517          	auipc	a0,0x3
 ffffffffc02027d8:	08450513          	addi	a0,a0,132 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc02027dc:	927fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4940,7 +4940,7 @@ ffffffffc02027e0:	00003697          	auipc	a3,0x3
 ffffffffc02027e4:	09068693          	addi	a3,a3,144 # ffffffffc0205870 <default_pmm_manager+0x50>
 ffffffffc02027e8:	00002617          	auipc	a2,0x2
 ffffffffc02027ec:	59060613          	addi	a2,a2,1424 # ffffffffc0204d78 <commands+0x728>
-ffffffffc02027f0:	0ac00593          	li	a1,172
+ffffffffc02027f0:	0ab00593          	li	a1,171
 ffffffffc02027f4:	00003517          	auipc	a0,0x3
 ffffffffc02027f8:	06450513          	addi	a0,a0,100 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc02027fc:	907fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4949,7 +4949,7 @@ ffffffffc0202800:	00003697          	auipc	a3,0x3
 ffffffffc0202804:	07068693          	addi	a3,a3,112 # ffffffffc0205870 <default_pmm_manager+0x50>
 ffffffffc0202808:	00002617          	auipc	a2,0x2
 ffffffffc020280c:	57060613          	addi	a2,a2,1392 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202810:	0aa00593          	li	a1,170
+ffffffffc0202810:	0a900593          	li	a1,169
 ffffffffc0202814:	00003517          	auipc	a0,0x3
 ffffffffc0202818:	04450513          	addi	a0,a0,68 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020281c:	8e7fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4958,7 +4958,7 @@ ffffffffc0202820:	00003697          	auipc	a3,0x3
 ffffffffc0202824:	05068693          	addi	a3,a3,80 # ffffffffc0205870 <default_pmm_manager+0x50>
 ffffffffc0202828:	00002617          	auipc	a2,0x2
 ffffffffc020282c:	55060613          	addi	a2,a2,1360 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202830:	0a800593          	li	a1,168
+ffffffffc0202830:	0a700593          	li	a1,167
 ffffffffc0202834:	00003517          	auipc	a0,0x3
 ffffffffc0202838:	02450513          	addi	a0,a0,36 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020283c:	8c7fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4967,7 +4967,7 @@ ffffffffc0202840:	00003697          	auipc	a3,0x3
 ffffffffc0202844:	a9068693          	addi	a3,a3,-1392 # ffffffffc02052d0 <commands+0xc80>
 ffffffffc0202848:	00002617          	auipc	a2,0x2
 ffffffffc020284c:	53060613          	addi	a2,a2,1328 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202850:	0a600593          	li	a1,166
+ffffffffc0202850:	0a500593          	li	a1,165
 ffffffffc0202854:	00003517          	auipc	a0,0x3
 ffffffffc0202858:	00450513          	addi	a0,a0,4 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020285c:	8a7fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4976,7 +4976,7 @@ ffffffffc0202860:	00003697          	auipc	a3,0x3
 ffffffffc0202864:	a7068693          	addi	a3,a3,-1424 # ffffffffc02052d0 <commands+0xc80>
 ffffffffc0202868:	00002617          	auipc	a2,0x2
 ffffffffc020286c:	51060613          	addi	a2,a2,1296 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202870:	0a400593          	li	a1,164
+ffffffffc0202870:	0a300593          	li	a1,163
 ffffffffc0202874:	00003517          	auipc	a0,0x3
 ffffffffc0202878:	fe450513          	addi	a0,a0,-28 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020287c:	887fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -4985,7 +4985,7 @@ ffffffffc0202880:	00003697          	auipc	a3,0x3
 ffffffffc0202884:	a5068693          	addi	a3,a3,-1456 # ffffffffc02052d0 <commands+0xc80>
 ffffffffc0202888:	00002617          	auipc	a2,0x2
 ffffffffc020288c:	4f060613          	addi	a2,a2,1264 # ffffffffc0204d78 <commands+0x728>
-ffffffffc0202890:	0a200593          	li	a1,162
+ffffffffc0202890:	0a100593          	li	a1,161
 ffffffffc0202894:	00003517          	auipc	a0,0x3
 ffffffffc0202898:	fc450513          	addi	a0,a0,-60 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc020289c:	867fd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -5057,7 +5057,7 @@ ffffffffc020290a:	00003697          	auipc	a3,0x3
 ffffffffc020290e:	fbe68693          	addi	a3,a3,-66 # ffffffffc02058c8 <default_pmm_manager+0xa8>
 ffffffffc0202912:	00002617          	auipc	a2,0x2
 ffffffffc0202916:	46660613          	addi	a2,a2,1126 # ffffffffc0204d78 <commands+0x728>
-ffffffffc020291a:	05300593          	li	a1,83
+ffffffffc020291a:	05200593          	li	a1,82
 ffffffffc020291e:	00003517          	auipc	a0,0x3
 ffffffffc0202922:	f3a50513          	addi	a0,a0,-198 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc0202926:	fdcfd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -5066,7 +5066,7 @@ ffffffffc020292a:	00003697          	auipc	a3,0x3
 ffffffffc020292e:	f8e68693          	addi	a3,a3,-114 # ffffffffc02058b8 <default_pmm_manager+0x98>
 ffffffffc0202932:	00002617          	auipc	a2,0x2
 ffffffffc0202936:	44660613          	addi	a2,a2,1094 # ffffffffc0204d78 <commands+0x728>
-ffffffffc020293a:	05200593          	li	a1,82
+ffffffffc020293a:	05100593          	li	a1,81
 ffffffffc020293e:	00003517          	auipc	a0,0x3
 ffffffffc0202942:	f1a50513          	addi	a0,a0,-230 # ffffffffc0205858 <default_pmm_manager+0x38>
 ffffffffc0202946:	fbcfd0ef          	jal	ra,ffffffffc0200102 <__panic>
@@ -5076,7 +5076,7 @@ ffffffffc020294a <_clock_map_swappable>:
 ffffffffc020294a:	0000f797          	auipc	a5,0xf
 ffffffffc020294e:	bee7b783          	ld	a5,-1042(a5) # ffffffffc0211538 <curr_ptr>
 ffffffffc0202952:	cf89                	beqz	a5,ffffffffc020296c <_clock_map_swappable+0x22>
-    list_add_before((list_entry_t*)mm->sm_priv,entry);//1
+    list_add_before((list_entry_t*)mm->sm_priv,entry);  //1
 ffffffffc0202954:	751c                	ld	a5,40(a0)
 ffffffffc0202956:	03060713          	addi	a4,a2,48
 }
@@ -5088,7 +5088,7 @@ ffffffffc020295e:	e398                	sd	a4,0(a5)
 ffffffffc0202960:	e698                	sd	a4,8(a3)
     elm->next = next;
 ffffffffc0202962:	fe1c                	sd	a5,56(a2)
-    page->visited=1;//2
+    page->visited=1;                                    //2
 ffffffffc0202964:	4785                	li	a5,1
     elm->prev = prev;
 ffffffffc0202966:	fa14                	sd	a3,48(a2)

@@ -22,7 +22,7 @@ PMP1: 0x0000000000000000-0xffffffffffffffff (A,R,W,X)
 (THU.CST) os is loading ...
 Special kernel symbols:
   entry  0xffffffffc0200032 (virtual)
-  etext  0xffffffffc02019ae (virtual)
+  etext  0xffffffffc02019ac (virtual)
   edata  0xffffffffc0206010 (virtual)
   end    0xffffffffc0206470 (virtual)
 Kernel executable memory footprint: 26KB
@@ -33,7 +33,6 @@ check_alloc_page() succeeded!
 satp virtual address: 0xffffffffc0205000
 satp physical address: 0x0000000080205000
 ++ setup timer interrupts
-100 ticks
 100 ticks
 100 ticks
 100 ticks
