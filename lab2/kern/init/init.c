@@ -20,16 +20,16 @@ int kern_init(void) {
     const char *message = "(THU.CST) os is loading ...\0";
     //cprintf("%s\n\n", message);
     cputs(message);
-    print_kerninfo(); // 打印核心信息
+    print_kerninfo();   // 打印核心信息
     // grade_backtrace();
-    idt_init();  // 初始化中断描述符表
+    idt_init();         // 初始化中断描述符表
 
-    pmm_init();  // 初始化物理内存管理器(本次的核心)
+    pmm_init();         // 初始化物理内存管理器(本次的核心)
 
-    idt_init();  // 初始化中断描述符表
-    clock_init();   // 初始化时钟中断
-    intr_enable();  // 启用中断请求
-    while (1) {}
+    idt_init();         // 初始化中断描述符表
+    clock_init();       // 初始化时钟中断
+    intr_enable();      // 启用中断请求
+    while (1) {}    
 }
 
 void __attribute__((noinline))

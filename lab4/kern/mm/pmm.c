@@ -1,4 +1,5 @@
 #include <default_pmm.h>
+#include <buddy_system_pmm.h>
 #include <defs.h>
 #include <error.h>
 #include <kmalloc.h>
@@ -19,7 +20,7 @@ struct Page *pages;
 size_t npage = 0;
 // The kernel image is mapped at VA=KERNBASE and PA=info.base
 uint_t va_pa_offset;
-// memory starts at 0x80000000 in RISC-V
+// memory starts at 0x80000000 in RISC-V 物理页的开头(以页为单位)
 const size_t nbase = DRAM_BASE / PGSIZE;
 
 // virtual address of boot-time page directory
@@ -36,7 +37,8 @@ static void check_boot_pgdir(void);
 
 // init_pmm_manager - initialize a pmm_manager instance
 static void init_pmm_manager(void) {
-    pmm_manager = &default_pmm_manager;
+    //pmm_manager = &default_pmm_manager;
+    pmm_manager = &buddy_system_pmm_manager;
     cprintf("memory management: %s\n", pmm_manager->name);
     pmm_manager->init();
 }
@@ -93,46 +95,61 @@ size_t nr_free_pages(void) {
 }
 
 /* pmm_init - initialize the physical memory management */
+//DOING
 static void page_init(void) {
     extern char kern_entry[];
 
-    va_pa_offset = KERNBASE - 0x80200000;
+    va_pa_offset = KERNBASE - 0x80200000;                           // 虚拟地址到物理地址的偏移量
 
-    uint_t mem_begin = KERNEL_BEGIN_PADDR;
-    uint_t mem_size = PHYSICAL_MEMORY_END - KERNEL_BEGIN_PADDR;
-    uint_t mem_end = PHYSICAL_MEMORY_END;
+    uint_t mem_begin = KERNEL_BEGIN_PADDR;                          // 内核物理内存的起始地址
+    uint_t mem_size = PHYSICAL_MEMORY_END - KERNEL_BEGIN_PADDR;     // 内核占用的物理内存区域的大小
+    uint_t mem_end = PHYSICAL_MEMORY_END;                           // 内核物理内存的结束地址
+    extern struct free_area_tree free_area;
 
     cprintf("physcial memory map:\n");
-    cprintf("  memory: 0x%08lx, [0x%08lx, 0x%08lx].\n", mem_size, mem_begin,
-            mem_end - 1);
+    cprintf("  memory: 0x%08lx, [0x%08lx, 0x%08lx].\n", mem_size, mem_begin, mem_end - 1);
 
-    uint64_t maxpa = mem_end;
+    uint64_t maxpa = mem_end;   // 最大的物理地址
 
-    if (maxpa > KERNTOP) {
-        maxpa = KERNTOP;
-    }
+    if (maxpa > KERNTOP) maxpa = KERNTOP;
 
     extern char end[];
 
-    npage = maxpa / PGSIZE;
-    // BBL has put the initial page table at the first available page after the
-    // kernel
-    // so stay away from it by adding extra offset to end
-    pages = (struct Page *)ROUNDUP((void *)end, PGSIZE);
+    npage = maxpa / PGSIZE;     // 物理页的页数
 
-    for (size_t i = 0; i < npage - nbase; i++) {
-        SetPageReserved(pages + i);
+    size_t page_num = npage - nbase; // 内存物理页的页数 npage-nbase=32768,32768*2=65536
+    size_t* tree_begin = (size_t *)ROUNDUP((void *)end, PGSIZE);
+    size_t tree_size = 2*page_num;   //有bug
+    size_t* tree_end = tree_begin+tree_size;
+
+    //cprintf("[调试信息]page_num=%d\n",page_num);
+    // BBL已将初始页表放在内核后的第一个可用页上，因此通过在末尾添加额外的偏移量来远离它
+    // kernel在end[]结束, pages是剩下的页的开始
+    // 把pages指针指向内核所占内存空间结束后的第一页
+
+    free_area.free_tree = tree_begin;
+    
+    //pages = (struct Page *)ROUNDUP((void *)end, PGSIZE);
+    struct Page* pages_begin = (struct Page*)ROUNDUP(tree_end, PGSIZE);
+    struct Page* page_end    = pages_begin+page_num;
+    pages = pages_begin;
+    //一开始把所有页面都设置为保留给内核使用的，之后再设置哪些页面可以分配给其他程序
+    for (size_t i = 0; i < npage - nbase; i++) 
+    {
+        SetPageReserved(pages + i); //在kern/mm/memlayout.h定义的(将该bit设为1，为内核保留页面)
     }
 
-    uintptr_t freemem = PADDR((uintptr_t)pages + sizeof(struct Page) * (npage - nbase));
-
+    uintptr_t freemem = PADDR(page_end);
+    //按照页面大小PGSIZE进行对齐, ROUNDUP, ROUNDDOWN是在libs/defs.h定义的
     mem_begin = ROUNDUP(freemem, PGSIZE);
     mem_end = ROUNDDOWN(mem_end, PGSIZE);
     if (freemem < mem_end) {
+        //初始化我们可以自由使用的物理内存
         init_memmap(pa2page(mem_begin), (mem_end - mem_begin) / PGSIZE);
     }
     cprintf("vapaofset is %llu\n",va_pa_offset);
 }
+
 static void enable_paging(void) {
     write_csr(satp, 0x8000000000000000 | (boot_cr3 >> RISCV_PGSHIFT));
 }
@@ -185,7 +202,7 @@ void pmm_init(void) {
     // detect physical memory space, reserve already used memory,
     // then use pmm->init_memmap to create free page list
     page_init();
-
+    
     // use pmm->check to verify the correctness of the alloc/free function in a
     // pmm
     check_alloc_page();
