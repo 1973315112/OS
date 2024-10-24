@@ -22,49 +22,13 @@ PMP1: 0x0000000000000000-0xffffffffffffffff (A,R,W,X)
 (THU.CST) os is loading ...
 Special kernel symbols:
   entry  0xffffffffc0200032 (virtual)
-  etext  0xffffffffc0201808 (virtual)
+  etext  0xffffffffc02019ae (virtual)
   edata  0xffffffffc0206010 (virtual)
-  end    0xffffffffc0206478 (virtual)
+  end    0xffffffffc0206470 (virtual)
 Kernel executable memory footprint: 26KB
-memory management: buddy_system_pmm_manager
+memory management: best_fit_pmm_manager
 physcial memory map:
   memory: 0x0000000007e00000, [0x0000000080200000, 0x0000000087ffffff].
-0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 
-0 1 2 0 4 0 0 0 8 0 0 0 0 0 0 0 
-
-0 1 0 0 1 0 0 0 1 0 0 0 0 0 0 0 
-0 1 0 0 4 0 0 0 8 0 0 0 0 0 0 0 
-
-0 0 0 0 1 0 0 0 1 0 0 0 0 0 0 0 
-0 0 0 0 4 0 0 0 8 0 0 0 0 0 0 0 
-
-0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 
-0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 
-
-0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 
-0 0 2 0 4 0 0 0 0 0 0 0 0 0 0 0 
-
-1 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 
-1 0 2 0 4 0 0 0 0 0 0 0 0 0 0 0 
-
-1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-8 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-
-0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 
-0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 
-
-1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-8 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-
-1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-8 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-
-1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-8 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-
-1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-16384 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-
 check_alloc_page() succeeded!
 satp virtual address: 0xffffffffc0205000
 satp physical address: 0x0000000080205000
