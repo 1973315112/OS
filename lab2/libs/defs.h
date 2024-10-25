@@ -5,9 +5,9 @@
 #define NULL ((void *)0)
 #endif
 
-#define __always_inline inline __attribute__((always_inline))
-#define __noinline __attribute__((noinline))
-#define __noreturn __attribute__((noreturn))
+#define __always_inline inline __attribute__((always_inline))   // 这个宏用于告诉编译器尽可能地将标记为__always_inline的函数内联到每个调用点
+#define __noinline __attribute__((noinline))                    // 这个宏用于告诉编译器不要内联标记为__noinline的函数
+#define __noreturn __attribute__((noreturn))                    // 这个宏用于告诉编译器，标记为__noreturn的函数不会返回（要么通过exit等函数终止程序，要么陷入无限循环，要么导致程序崩溃）
 
 /* Represents true-or-false values */
 typedef int bool;

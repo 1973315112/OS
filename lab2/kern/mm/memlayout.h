@@ -28,15 +28,22 @@ typedef uintptr_t pte_t;
 typedef uintptr_t pde_t;
 
 /* *
- * struct Page-页面描述符结构。每个页面描述一个页框(物理页)。
- * 在kern/mm/pmm.h中，您可以找到许多将Page转换为其他数据类型（如物理地址）的有用函数。
+ * 功能:struct Page-页面描述符结构。每个页面描述一个页框(物理页)。
+ * 变量:
+ *      @ref        :页框(物理页)的引用计数器(例如lab4中page_insert(boot_pgdir, p1, 0x0, 0)会使ref+1)
+ *      @flags      :描述页框(物理页)状态的标志，依靠二进制位表示
+ *                   第0位表示页面是否为内核保留，1:页面是为内核保留的，不能在alloc/free_pages中使用；0:页面不是为内核保留的
+ *                   第1位表示页面是否为一个<未被分配>的<空闲内存块的首页>，1:页面是一个<未被分配>的<空闲内存块的首页>；0:页面不是一个<未被分配>的<空闲内存块的首页>
+ *      @property   :如果当前的页面是一段连续物理页的首页，那么使用这一变量记录这一段连续物理页的数量
+ *      @page_link  ：空闲链表的节点(功能:用该节点进行链表相关操作，类型:链表节点结构体)
+ * 注意:在kern/mm/pmm.h中，您可以找到许多将Page转换为其他数据类型（如物理地址）的有用函数。
  * */
 struct Page 
 {
-    int ref;                        // 页框(物理页)的引用计数器
-    uint64_t flags;                 // 描述页框(物理页)状态的标志数组
-    unsigned int property;          // 空闲块数（first-fit中使用，used in first fit pm manager）
-    list_entry_t page_link;         // 空闲链表链接(功能:用该节点进行链表相关操作，类型:链表节点结构体)
+    int ref;
+    uint64_t flags;
+    unsigned int property;
+    list_entry_t page_link;
 };
 
 /* 描述页框(物理页)状态的标志Flags */

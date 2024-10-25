@@ -6,6 +6,9 @@
 first-fit 连续物理内存分配算法作为物理内存分配一个很基础的方法，需要同学们理解它的实现过程。请大家仔细阅读实验手册的教程并结合`kern/mm/default_pmm.c`中的相关代码，认真分析`default_init`，`default_init_memmap`，`default_alloc_pages`， `default_free_pages`等相关函数，并描述程序在进行物理内存分配的过程以及各个函数的作用。 请在实验报告中简要说明你的设计实现过程。请回答如下问题：
 * 你的first fit算法是否有进一步的改进空间？
 
+### `first-fit 连续物理内存分配算法`
+first-fit算法就是当需要分配页面时，从空闲页块链表中找到第一个适合大小的空闲页块，然后进行分配。当释放页面时，它会将释放的页面添加回链表，并在可行时合并相邻的空闲页块，以最大限度地减少内存碎片。
+
 ### `default_init()`
 ```c
 static void
@@ -737,9 +740,7 @@ function CPU_query_memory():
 CPU主动探测方法是一种与平台无关的，具有最广泛可用性的可用内存探测方法，但是其需要遍历整个可用内存空间，效率非常低下，因此在RISC-V中，可以使用`sbi_query_memory()`函数高效和准确的获取可用内存。
 
 ### `sbi_query_memory()`探测方法
-`sbi_query_memory()`探测方法是一种RISC-V中准确和高效的探测方法。它实际上是依赖RISC-V规范和硬件厂商的约定，opensbi通过读取厂商提供的设备树（Device Tree），获得可用的物理内存范围。
-
-
+`sbi_query_memory()`探测方法是一种RISC-V中准确和高效的探测方法。它实际上是依赖RISC-V规范和硬件厂商的约定，由 bootloader，即OpenSBI来完成。OpenSBI对于包括物理内存在内的各外设进行扫描，将扫描结果以DTB(Device Tree Blob)的格式保存在物理内存中。随后OpenSBI会将其地址保存在a1寄存器中，供我们使用。
 
 `sbi_query_memory()`探测方法的伪代码如下:
 ```c
