@@ -9,7 +9,7 @@
 //pre define
 struct mm_struct;
 
-// 虚拟连续存储区（vma），[vm_start，vm_end），
+// 虚拟连续存储区（vma），[vm_start，vm_end）
 // addr属于vma意味着vma.vm_start<= addr <vma.vm_end
 struct vma_struct {
     struct mm_struct *vm_mm; // 使用相同PDT的vma集合
@@ -26,11 +26,11 @@ struct vma_struct {
 #define VM_WRITE                0x00000002
 #define VM_EXEC                 0x00000004
 
-// 使用相同PDT的一组vma的控制结构(the control struct for a set of vma using the same PDT)
+// 使用相同页目录表的一组vma的控制结构(the control struct for a set of vma using the same PDT)
 struct mm_struct {
     list_entry_t mmap_list;        // 按vma起始地址排序的有序链表
     struct vma_struct *mmap_cache; // 当前访问的vma，出于速度考虑(used for speed purpose)
-    pde_t *pgdir;                  // 这些vma的PDT
+    pde_t *pgdir;                  // 这些vma的页目录表
     int map_count;                 // 这些vma的数量
     void *sm_priv;                 // swap管理器的私有数据
 };

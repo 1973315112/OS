@@ -58,17 +58,16 @@ typedef uintptr_t pde_t;
 typedef pte_t swap_entry_t; //the pte can also be a swap entry
 
 /* *
- * struct Page - Page descriptor structures. Each Page describes one
- * physical page. In kern/mm/pmm.h, you can find lots of useful functions
- * that convert Page to other data types, such as physical address.
+ * 功能:页面描述符结构体，每个页面描述符结构体描述一段连续物理页。
+ * 注意:在kern/mm/pmm.h中，可以找到许多将Page转换为其他数据类型（如物理地址）的函数。
  * */
 struct Page {
-    int ref;                        // page frame's reference counter
-    uint_t flags;                 // array of flags that describe the status of the page frame
+    int ref;                        // 页框(物理页)的引用计数器(例如set_page_ref()会使ref+1)
+    uint_t flags;                   // 描述页框(物理页)状态的标志，依靠二进制位表示
     uint_t visited;
-    unsigned int property;          // the num of free block, used in first fit pm manager
-    list_entry_t page_link;         // free list link
-    list_entry_t pra_page_link;     // used for pra (page replace algorithm)
+    unsigned int property;          // 如果当前的页面是一段连续物理页的首页，那么使用这一变量记录这一段连续物理页的数量
+    list_entry_t page_link;         // 空闲链表的节点(功能:用该节点进行链表相关操作，类型:链表节点结构体)
+    list_entry_t pra_page_link;     // 页面替换链表的节点used for pra (page replace algorithm)
     uintptr_t pra_vaddr;            // used for pra (page replace algorithm)
 };
 

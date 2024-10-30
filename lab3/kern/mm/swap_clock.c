@@ -40,10 +40,12 @@ _clock_init_mm(struct mm_struct *mm)
        初始化当前指针curr_ptr指向pra_list_head，表示当前页面替换位置为链表头
        将mm的私有成员指针指向pra_list_head，用于后续的页面替换算法操作
     */
+    // 初始化pra_list_head为空链表
     list_init(&pra_list_head);
+    // 初始化当前指针curr_ptr指向pra_list_head，表示当前页面替换位置为链表头
     curr_ptr = &pra_list_head;
+    // 将mm的私有成员指针指向pra_list_head，用于后续的页面替换算法操作
     mm->sm_priv = &pra_list_head;
-    
     //cprintf(" mm->sm_priv %x in fifo_init_mm\n",mm->sm_priv);
 //################################################################################
     return 0;
@@ -55,7 +57,6 @@ static int
 _clock_map_swappable(struct mm_struct *mm, uintptr_t addr, struct Page *page, int swap_in)
 {
     list_entry_t *entry=&(page->pra_page_link);
- 
     assert(entry != NULL && curr_ptr != NULL);
 //################################################################################
     //record the page access situlation
@@ -65,8 +66,8 @@ _clock_map_swappable(struct mm_struct *mm, uintptr_t addr, struct Page *page, in
        1.将页面page插入到页面链表pra_list_head的末尾
        2.将页面的visited标志置为1，表示该页面已被访问
     */
-    list_add_before((list_entry_t*)mm->sm_priv,entry);  //1
-    page->visited=1;                                    //2
+    list_add_before((list_entry_t*)mm->sm_priv,entry);  //1.将页面page插入到页面链表pra_list_head的末尾
+    page->visited=1;                                    //2.将页面的visited标志置为1，表示该页面已被访问
 //################################################################################
     return 0;
 }
@@ -77,9 +78,9 @@ _clock_map_swappable(struct mm_struct *mm, uintptr_t addr, struct Page *page, in
 static int
 _clock_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tick)
 {
-     list_entry_t *head=(list_entry_t*) mm->sm_priv;
-         assert(head != NULL);
-     assert(in_tick==0);
+    list_entry_t *head=(list_entry_t*) mm->sm_priv;
+    assert(head != NULL);
+    assert(in_tick==0);
 //################################################################################
      /* Select the victim */
      //(1)  unlink the  earliest arrival page in front of pra_list_head qeueue
@@ -104,6 +105,7 @@ _clock_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tic
         // 获取当前页面对应的Page结构指针
         struct Page* page = le2page(curr_ptr, pra_page_link);
         // 查找最早未被访问的页面
+        update_visited(page);
         if( page->visited==0 )
         {
             // 如果当前页面未被访问，则将该页面从页面链表中删除，并将该页面指针赋值给ptr_page作为换出页面
@@ -119,6 +121,43 @@ _clock_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tic
     }
     return 0;
 }
+
+static void testprint()
+{
+    // 打印page->visited
+    list_entry_t *now=list_next(&pra_list_head);
+    /*while(now!=&pra_list_head)
+    {
+        struct Page* page = le2page(now, pra_page_link);
+        cprintf("%d ",page->visited);
+        now=list_next(now);
+    }
+    cprintf("\n");
+    // 打印页表项A
+    now=list_next(&pra_list_head);
+    extern pde_t *boot_pgdir;
+    while(now!=&pra_list_head)
+    {
+        struct Page* page = le2page(now, pra_page_link);
+        uintptr_t la = ROUNDDOWN(page->pra_vaddr, PGSIZE);
+        pte_t *ptep = get_pte(boot_pgdir, la, 1); // 获取指向页表中对应页表项的指针
+        cprintf("%d ",(*ptep)>>6&1);
+        //if(((*ptep)>>6&1)==1) *ptep = (*ptep) - 64;
+        now=list_next(now);
+    }
+    cprintf("\n"); 
+    */ 
+    // 打印page->pra_vaddr
+    now=list_next(&pra_list_head);
+    while(now!=&pra_list_head)
+    {
+        //struct Page* page = le2page(now, pra_page_link);
+        //cprintf("0x%x ",page->pra_vaddr);
+    //    now=list_next(now);
+    }
+    //cprintf("\n");   
+}
+
 static int
 _clock_check_swap(void) {
 #ifdef ucore_test
@@ -167,6 +206,7 @@ _clock_check_swap(void) {
     assert(pgfault_num==5);
     *(unsigned char *)0x2000 = 0x0b;
     assert(pgfault_num==5);
+    testprint();
     *(unsigned char *)0x1000 = 0x0a;
     assert(pgfault_num==5);
     *(unsigned char *)0x2000 = 0x0b;

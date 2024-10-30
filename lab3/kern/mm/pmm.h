@@ -6,6 +6,7 @@
 #include <defs.h>
 #include <memlayout.h>
 #include <mmu.h>
+#include <stdio.h>
 
 // pmm_manager is a physical memory management class. A special pmm manager -
 // XXX_pmm_manager
@@ -74,6 +75,7 @@ struct Page *pgdir_alloc_page(pde_t *pgdir, uintptr_t la, uint32_t perm);
 /* *
  * KADDR - takes a physical address and returns the corresponding kernel virtual
  * address. It panics if you pass an invalid physical address.
+ * 获取物理地址并返回相应的内核虚拟地址。如果传递无效的物理地址会导致panics。
  * */
 #define KADDR(pa)                                                \
     ({                                                           \
@@ -137,6 +139,23 @@ static inline void flush_tlb() { asm volatile("sfence.vma"); }
 // construct PTE from a page and permission bits
 static inline pte_t pte_create(uintptr_t ppn, int type) {
     return (ppn << PTE_PPN_SHIFT) | PTE_V | type;
+}
+
+/*
+ * 功能:将页表中的A信息位更新到page->visited
+ * 参数:
+ *      page:需要更新的物理页页面描述符
+ */
+static void update_visited(struct Page* page)
+{
+    cprintf("[调试信息]update_visited()\n");
+    extern pde_t *boot_pgdir;
+    uintptr_t la = ROUNDDOWN(page->pra_vaddr, PGSIZE);
+    pte_t *ptep = get_pte(boot_pgdir, la, 1); // 获取指向页表中对应页表项的指针
+    cprintf("[调试信息]页表项=%x\n",(*ptep));
+    page->visited = ((*ptep)>>6)&1;
+    cprintf("[调试信息]0x%x的page->visited=%d\n",page->pra_vaddr,page->visited);
+    if(page->visited==1) *ptep = (*ptep) - 64;
 }
 
 static inline pte_t ptd_create(uintptr_t ppn) { return pte_create(ppn, PTE_V); }

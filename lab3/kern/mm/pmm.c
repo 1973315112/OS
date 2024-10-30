@@ -12,21 +12,21 @@
 #include <vmm.h>
 #include <riscv.h>
 
-// virtual address of physical page array
+// 物理页数组的虚拟地址
 struct Page *pages;
-// amount of physical memory (in pages)
+// 物理内存数量（以页为单位）
 size_t npage = 0;
-// The kernel image is mapped at VA=KERNBASE and PA=info.base
+// 内核映像映射到VA=KERNBASE和PA=info.base
 uint_t va_pa_offset;
-// memory starts at 0x80000000 in RISC-V
+// RISC-V中的内存从0x80000000开始
 const size_t nbase = DRAM_BASE / PGSIZE;
 
-// virtual address of boot-time page directory
+// 启动时（boot-time）页目录表（page directory）的虚拟地址
 pde_t *boot_pgdir = NULL;
-// physical address of boot-time page directory
+// 启动时（boot-time）页目录表（page directory）的物理地址
 uintptr_t boot_cr3;
 
-// physical memory management
+// 物理内存管理器
 const struct pmm_manager *pmm_manager;
 
 
@@ -136,17 +136,26 @@ static void enable_paging(void) {
  * @param[in]  size   Memory size
  * @param[in]  pa     Physical address of this memory
  * @param[in]  perm   The permission of this memory
+ * 功能:启用分页机制，将一段线性地址空间映射到物理地址空间。
+ * 参数:
+ *      @pgdir  :指向页目录表的指针。
+ *      @la     :需要映射的线性地址(可能是指连续虚拟地址)的起始地址。
+ *      @size   :需要映射的内存大小。
+ *      @pa     :物理地址的起始地址
+ *      @perm   :内存的权限（是否可读，写，可执行等）
+ * 
  */
 static void boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size,
                              uintptr_t pa, uint32_t perm) {
-    assert(PGOFF(la) == PGOFF(pa));
+    assert(PGOFF(la) == PGOFF(pa)); // 检查页面偏移相同
     size_t n = ROUNDUP(size + PGOFF(la), PGSIZE) / PGSIZE;
     la = ROUNDDOWN(la, PGSIZE);
     pa = ROUNDDOWN(pa, PGSIZE);
-    for (; n > 0; n--, la += PGSIZE, pa += PGSIZE) {
-        pte_t *ptep = get_pte(pgdir, la, 1);
+    for (; n > 0; n--, la += PGSIZE, pa += PGSIZE) 
+    {
+        pte_t *ptep = get_pte(pgdir, la, 1); // 获取指向页表中对应页表项的指针
         assert(ptep != NULL);
-        *ptep = pte_create(pa >> PGSHIFT, PTE_V | perm);
+        *ptep = pte_create(pa >> PGSHIFT, PTE_V | perm); // 设置页表项
     }
 }
 
@@ -211,6 +220,8 @@ void pmm_init(void) {
 
 // get_pte - get pte and return the kernel virtual address of this pte for la
 //        - if the PT contians this pte didn't exist, alloc a page for PT
+// 功能:获取指针并返回虚拟地址的pte内核虚拟地址
+//     -如果页目录表不存在此pte，请为PT分配一个页面
 // parameter:
 //  pgdir:  the kernel virtual base address of PDT
 //  la:     the linear address need to map
@@ -244,8 +255,9 @@ pte_t *get_pte(pde_t *pgdir, uintptr_t la, bool create) {
      *   PTE_U           0x004                   // page table/directory entry
      * flags bit : User can access
      */
-    pde_t *pdep1 = &pgdir[PDX1(la)];
-    if (!(*pdep1 & PTE_V)) {
+    pde_t *pdep1 = &pgdir[PDX1(la)];    // 根据虚拟地址的30-38位从页目录表（三级页表）获取三级页表项（从0开始编号）
+    if (!(*pdep1 & PTE_V))              // 如果页表项是否无效
+    {
         struct Page *page;
         if (!create || (page = alloc_page()) == NULL) {
             return NULL;
@@ -255,7 +267,7 @@ pte_t *get_pte(pde_t *pgdir, uintptr_t la, bool create) {
         memset(KADDR(pa), 0, PGSIZE);
         *pdep1 = pte_create(page2ppn(page), PTE_U | PTE_V);
     }
-    pde_t *pdep0 = &((pde_t *)KADDR(PDE_ADDR(*pdep1)))[PDX0(la)];
+    pde_t *pdep0 = &((pde_t *)KADDR(PDE_ADDR(*pdep1)))[PDX0(la)]; // 根据虚拟地址的21-29位从二级页表获取二级页表项（从0开始编号）
 //    pde_t *pdep0 = &((pde_t *)(PDE_ADDR(*pdep1)))[PDX0(la)];
     if (!(*pdep0 & PTE_V)) {
     	struct Page *page;
@@ -268,10 +280,11 @@ pte_t *get_pte(pde_t *pgdir, uintptr_t la, bool create) {
  //   	memset(pa, 0, PGSIZE);
     	*pdep0 = pte_create(page2ppn(page), PTE_U | PTE_V);
     }
-    return &((pte_t *)KADDR(PDE_ADDR(*pdep0)))[PTX(la)];
+    return &((pte_t *)KADDR(PDE_ADDR(*pdep0)))[PTX(la)]; // 根据虚拟地址的12-20位从一级页表获取一级页表项（从0开始编号）
 }
 
 // get_page - get related Page struct for linear address la using PDT pgdir
+// 使用PDT pgdir获取线性地址la的相关Page结构
 struct Page *get_page(pde_t *pgdir, uintptr_t la, pte_t **ptep_store) {
     pte_t *ptep = get_pte(pgdir, la, 0);
     if (ptep_store != NULL) {

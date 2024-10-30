@@ -2,6 +2,7 @@
 #include <swapfs.h>
 #include <swap_fifo.h>
 #include <swap_clock.h>
+#include <swap_lru.h>
 #include <stdio.h>
 #include <string.h>
 #include <memlayout.h>
@@ -34,13 +35,14 @@ swap_init(void)
      swapfs_init();
 
      // Since the IDE is faked, it can only store 7 pages at most to pass the test
+     // 由于IDE是伪造的，它最多只能存储7个页面才能通过测试
      if (!(7 <= max_swap_offset &&
         max_swap_offset < MAX_SWAP_OFFSET_LIMIT)) {
         panic("bad max_swap_offset %08x.\n", max_swap_offset);
      }
      //sm = &swap_manager_fifo;
-     sm = &swap_manager_clock;//use first in first out Page Replacement Algorithm
-     //sm = &swap_manager_lru;
+     //sm = &swap_manager_clock;//use first in first out Page Replacement Algorithm
+     sm = &swap_manager_lru;
      int r = sm->init();
      
      if (r == 0)

@@ -13,6 +13,9 @@
   mm is the memory manager for the set of continuous virtual memory  
   area which have the same PDT. vma is a continuous virtual memory area.
   There a linear link list for vma & a redblack link list for vma in mm.
+  vmm设计包括两部分：mm_struct（mm）和vma_struct（vma）
+  mm是具有相同PDT的连续虚拟内存区域集的内存管理器。vma是一个连续的虚拟内存区域。
+  vmm有一个用于vma的线性链表和一个用于mm的vma的红黑链表。
 ---------------
   mm related functions:
    golbal functions
@@ -255,7 +258,7 @@ check_vma_struct(void) {
 
 struct mm_struct *check_mm_struct;
 
-// check_pgfault - check correctness of pgfault handler
+// check_pgfault - 检查pgfault处理程序的正确性(check correctness of pgfault handler)
 static void
 check_pgfault(void) {
 	// char *name = "check_pgfault";
