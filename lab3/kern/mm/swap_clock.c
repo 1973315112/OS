@@ -122,11 +122,14 @@ _clock_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tic
     return 0;
 }
 
+/*
+ * 功能: 打印page->visited，页表项的A标志位和对应的虚拟地址
+ */
 static void testprint()
 {
     // 打印page->visited
     list_entry_t *now=list_next(&pra_list_head);
-    /*while(now!=&pra_list_head)
+    while(now!=&pra_list_head)
     {
         struct Page* page = le2page(now, pra_page_link);
         cprintf("%d ",page->visited);
@@ -146,16 +149,16 @@ static void testprint()
         now=list_next(now);
     }
     cprintf("\n"); 
-    */ 
+    
     // 打印page->pra_vaddr
     now=list_next(&pra_list_head);
     while(now!=&pra_list_head)
     {
-        //struct Page* page = le2page(now, pra_page_link);
-        //cprintf("0x%x ",page->pra_vaddr);
-    //    now=list_next(now);
+        struct Page* page = le2page(now, pra_page_link);
+        cprintf("0x%x ",page->pra_vaddr);
+        now=list_next(now);
     }
-    //cprintf("\n");   
+    cprintf("\n\n");   
 }
 
 static int
@@ -194,6 +197,13 @@ _clock_check_swap(void) {
     assert(pgfault_num==6);
     ++ score; cprintf("grading %d/%d points", score, totalscore);
 #else 
+/*  注意:这部分为作业自带的测试样例，它由于指令重排所以并非按照表面的顺序执行，
+ *      但其assert检查同样按照指令重排后的情况设计，所以<我们的代码能通过该测试>,
+ *      但其不能完全体现我们的clock算法的正确性，所以我们使用__asm__ __volatile__("fence");
+ *      设计了相同的无指令重排的assert检查。
+ *  注意:make grade时必须使用该测试样例 
+ */
+///*
     *(unsigned char *)0x3000 = 0x0c;
     assert(pgfault_num==4);
     *(unsigned char *)0x1000 = 0x0a;
@@ -206,7 +216,6 @@ _clock_check_swap(void) {
     assert(pgfault_num==5);
     *(unsigned char *)0x2000 = 0x0b;
     assert(pgfault_num==5);
-    testprint();
     *(unsigned char *)0x1000 = 0x0a;
     assert(pgfault_num==5);
     *(unsigned char *)0x2000 = 0x0b;
@@ -220,6 +229,62 @@ _clock_check_swap(void) {
     assert(*(unsigned char *)0x1000 == 0x0a);
     *(unsigned char *)0x1000 = 0x0a;
     assert(pgfault_num==6);
+//*/
+/*  注意:这部分使用__asm__ __volatile__("fence");
+ *      设计了无指令重排的assert检查。
+ *  注意:make grade时不能使用该测试样例 
+ */
+/*
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x3000 = 0x0c;
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==4);
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x1000 = 0x0a;
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==4);
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x4000 = 0x0d;
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==4);
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x2000 = 0x0b;    // 1(1),2(1),3(1),4(1)
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==4);
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x5000 = 0x0e;    // 2(0),3(0),4(0),5(1) 1->5
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==5);
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x2000 = 0x0b;    // 2(1),3(0),4(0),5(1)
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==5);
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x1000 = 0x0a;    // 2(0),4(0),5(1),1(1) 3->1
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==6);
+    __asm__ __volatile__("fence");      
+    *(unsigned char *)0x2000 = 0x0b;    // 2(1),4(0),5(1),1(1)
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==6);
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x3000 = 0x0c;    // 2(0),5(1),1(1),3(0) 4->3
+    assert(pgfault_num==7);
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x4000 = 0x0d;    // 5(1),1(1),3(0),4(1) 2->4
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==8);
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x5000 = 0x0e;    // 5(1),1(1),3(0),4(1)
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==8);
+    __asm__ __volatile__("fence");
+    assert(*(unsigned char *)0x1000 == 0x0a);    // 5(1),1(1),3(0),4(1)
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x1000 = 0x0a;    // 5(1),1(1),3(0),4(1)
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==8);
+*/
 #endif
     return 0;
 }

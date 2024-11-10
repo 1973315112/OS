@@ -43,7 +43,7 @@ static int _lru_map_swappable(struct mm_struct* mm, uintptr_t addr, struct Page*
 {
     list_entry_t *entry=&(page->pra_page_link);
     assert(entry != NULL && curr_ptr != NULL);
-    list_add_before((list_entry_t*)mm->sm_priv,entry);
+    list_add_after((list_entry_t*)mm->sm_priv,entry);
     page->visited=1;
     return 0;
 }
@@ -98,17 +98,14 @@ static void clear_A()
 /*
  * 功能: 更新LRU的链表
  */
-static void lru_update_list()
+static void lru_update_list(size_t x)
 {
-    cprintf("[调试信息]进入lru_update_list()\n");
+    //cprintf("[调试信息]进入lru_update_list()\n");
     list_entry_t *now=list_next(&pra_list_head);
     while(now != (&pra_list_head))
     {
         struct Page* page = le2page(now, pra_page_link);
-        //uintptr_t la = ROUNDDOWN(page->pra_vaddr, PGSIZE);
-        //pte_t *ptep = get_pte(boot_pgdir, la, 1); // 获取指向页表中对应页表项的指针
-        update_visited(page);
-        if( page->visited==1 )  
+        if(x == page->pra_vaddr)
         {
             cprintf("[调试信息]将0x%x放到链表的首部\n",page->pra_vaddr);
             page->visited = 0;
@@ -119,7 +116,6 @@ static void lru_update_list()
     if(now == (&pra_list_head)) return;
     list_del(now);
     list_add_after(&pra_list_head,now);
-    cprintf("\n");
 }
 
 
@@ -128,29 +124,8 @@ static void lru_update_list()
  */
 static void testprint()
 {
-    // 打印page->visited
+    cprintf("[调试信息]:当前LRU链表为:");
     list_entry_t *now=list_next(&pra_list_head);
-    while(now!=&pra_list_head)
-    {
-        struct Page* page = le2page(now, pra_page_link);
-        cprintf("%d ",page->visited);
-        now=list_next(now);
-    }
-    cprintf("\n");
-    // 打印页表项A
-    now=list_next(&pra_list_head);
-    extern pde_t *boot_pgdir;
-    while(now!=&pra_list_head)
-    {
-        struct Page* page = le2page(now, pra_page_link);
-        uintptr_t la = ROUNDDOWN(page->pra_vaddr, PGSIZE);
-        pte_t *ptep = get_pte(boot_pgdir, la, 1); // 获取指向页表中对应页表项的指针
-        cprintf("%d ",(*ptep)>>6&1);
-        //if(((*ptep)>>6&1)==1) *ptep = (*ptep) - 64;
-        now=list_next(now);
-    }
-    cprintf("\n"); 
-    
     // 打印page->pra_vaddr
     now=list_next(&pra_list_head);
     while(now!=&pra_list_head)
@@ -159,7 +134,7 @@ static void testprint()
         cprintf("0x%x ",page->pra_vaddr);
         now=list_next(now);
     }
-    cprintf("\n\n");   
+    cprintf("\n");   
 }
 
 /*
@@ -200,34 +175,142 @@ static int _lru_check_swap(void) {
     assert(pgfault_num==6);
     ++ score; cprintf("grading %d/%d points", score, totalscore);
 #else 
-    cprintf("[调试信息]进入_lru_check_swap\n");
-    clear_A();
+    // 注意:本测试样例仅作为示例，在真正有效的LRU换页机制中应实现每次内存访问
+    //     都能自动执行lru_update_list()函数
+    //cprintf("[调试信息]进入_lru_check_swap\n");
     testprint();
-    *(unsigned char *)0x3000 = 0x0c;testprint();lru_update_list();testprint(); // 3124
+    // 4321
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x3000 = 0x0c;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x3000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
     assert(pgfault_num==4);
-    *(unsigned char *)0x1000 = 0x0a;testprint();lru_update_list();testprint(); // 1324
+    // 3421
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x1000 = 0x0a;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x1000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
     assert(pgfault_num==4);
-    *(unsigned char *)0x4000 = 0x0d;testprint();lru_update_list();testprint();
+    // 1342
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x4000 = 0x0d;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x4000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
     assert(pgfault_num==4);
-    *(unsigned char *)0x2000 = 0x0b;testprint();lru_update_list();testprint(); // 2413      // 2134 
+    // 4132
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x2000 = 0x0b;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x2000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
     assert(pgfault_num==4);
-    *(unsigned char *)0x5000 = 0x0e;testprint();lru_update_list();testprint(); // 5241 3->5 // 5213 4->5 
-    //assert(pgfault_num==5);
-    *(unsigned char *)0x2000 = 0x0b;testprint();lru_update_list();testprint(); // 2541      // 2513 
-    //assert(pgfault_num==5);
-    *(unsigned char *)0x1000 = 0x0a;testprint();lru_update_list();testprint(); // 1254      // 1253 
-    //assert(pgfault_num==5);
-    *(unsigned char *)0x2000 = 0x0b;testprint();lru_update_list();testprint(); // 2154      // 2153 
-    //assert(pgfault_num==5);
-    *(unsigned char *)0x3000 = 0x0c;testprint();lru_update_list();testprint(); // 3215 4->3 // 3215 
-    //assert(pgfault_num==6);
-    *(unsigned char *)0x4000 = 0x0d;testprint();lru_update_list();testprint(); // 4321 5->4 // 4321 5->4 
-    //assert(pgfault_num==7);
-    *(unsigned char *)0x5000 = 0x0e;testprint();lru_update_list();testprint(); // 5432 1->5 // 5432 1->5 
-    //assert(pgfault_num==8);
-    assert(*(unsigned char *)0x1000 == 0x0a);testprint();lru_update_list();testprint(); //1543 2->1  // 1543 2->1 
-    *(unsigned char *)0x1000 = 0x0a;testprint();lru_update_list();testprint(); 
-    //assert(pgfault_num==9);
+    // 2413
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x5000 = 0x0e;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x5000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==5);
+    // 5241 3->5
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x2000 = 0x0b;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x2000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==5);
+    // 2541
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x1000 = 0x0a;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x1000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==5);
+    // 1254
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x2000 = 0x0b;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x2000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==5);
+    // 2154
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x3000 = 0x0c;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x3000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==6);
+    // 3215 4->3
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x4000 = 0x0d;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x4000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==7);
+    // 4321 5->4
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x5000 = 0x0e;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x5000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==8);
+    // 5432 1->5
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    assert(*(unsigned char *)0x1000 == 0x0a);
+    __asm__ __volatile__("fence");
+    lru_update_list(0x1000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==9);
+    // 1543 2->1
+    //----------------------------------------
+    __asm__ __volatile__("fence");
+    *(unsigned char *)0x1000 = 0x0a;
+    __asm__ __volatile__("fence");
+    lru_update_list(0x1000);
+    __asm__ __volatile__("fence");
+    testprint();
+    __asm__ __volatile__("fence");
+    assert(pgfault_num==9);
+    // 1543
+    //----------------------------------------
 #endif
     return 0;
 }

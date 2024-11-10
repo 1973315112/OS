@@ -148,13 +148,13 @@ static inline pte_t pte_create(uintptr_t ppn, int type) {
  */
 static void update_visited(struct Page* page)
 {
-    cprintf("[调试信息]update_visited()\n");
+    //cprintf("[调试信息]update_visited()\n");
     extern pde_t *boot_pgdir;
     uintptr_t la = ROUNDDOWN(page->pra_vaddr, PGSIZE);
     pte_t *ptep = get_pte(boot_pgdir, la, 1); // 获取指向页表中对应页表项的指针
-    cprintf("[调试信息]页表项=%x\n",(*ptep));
+    //cprintf("[调试信息]页表项=%x\n",(*ptep));
     page->visited = ((*ptep)>>6)&1;
-    cprintf("[调试信息]0x%x的page->visited=%d\n",page->pra_vaddr,page->visited);
+    //cprintf("[调试信息]0x%x的page->visited=%d\n",page->pra_vaddr,page->visited);
     if(page->visited==1) *ptep = (*ptep) - 64;
 }
 
