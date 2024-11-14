@@ -309,26 +309,20 @@ check_pgfault(void) {
 //page fault number
 volatile unsigned int pgfault_num=0;
 
-/* do_pgfault - interrupt handler to process the page fault execption
- * @mm         : the control struct for a set of vma using the same PDT
- * @error_code : the error code recorded in trapframe->tf_err which is setted by x86 hardware
- * @addr       : the addr which causes a memory access exception, (the contents of the CR2 register)
+/* do_pgfault - 处理页故障异常的中断处理程序
+ * @mm         : 使用相同PDT的一组vma的控制结构
+ * @error_code : 在trapframe->tf_err中记录的错误代码，由x86硬件设置
+ * @addr       : 导致内存访问异常的地址（CR2寄存器的内容）
  *
- * CALL GRAPH: trap--> trap_dispatch-->pgfault_handler-->do_pgfault
- * The processor provides ucore's do_pgfault function with two items of information to aid in diagnosing
- * the exception and recovering from it.
- *   (1) The contents of the CR2 register. The processor loads the CR2 register with the
- *       32-bit linear address that generated the exception. The do_pgfault fun can
- *       use this address to locate the corresponding page directory and page-table
- *       entries.
- *   (2) An error code on the kernel stack. The error code for a page fault has a format different from
- *       that for other exceptions. The error code tells the exception handler three things:
- *         -- The P flag   (bit 0) indicates whether the exception was due to a not-present page (0)
- *            or to either an access rights violation or the use of a reserved bit (1).
- *         -- The W/R flag (bit 1) indicates whether the memory access that caused the exception
- *            was a read (0) or write (1).
- *         -- The U/S flag (bit 2) indicates whether the processor was executing at user mode (1)
- *            or supervisor mode (0) at the time of the exception.
+ * 调用图: trap--> trap_dispatch-->pgfault_handler-->do_pgfault
+ * 处理器提供给ucore的do_pgfault函数两项信息，以帮助诊断异常并从中恢复。
+ *   (1) CR2寄存器的内容。处理器将生成异常的32位线性地址加载到CR2寄存器中。
+ *       do_pgfault函数可以使用此地址定位相应的页目录和页表项。
+ *   (2) 内核栈上的错误代码。页故障的错误代码格式不同于其他异常的错误代码。
+ *       错误代码告诉异常处理程序三件事：
+ *         -- P标志（第0位）指示异常是由于不存在的页面（0）还是由于访问权限违规或使用保留位（1）。
+ *         -- W/R标志（第1位）指示导致异常的内存访问是读取（0）还是写入（1）。
+ *         -- U/S标志（第2位）指示处理器在异常发生时是处于用户模式（1）还是管理模式（0）。
  */
 
 int
@@ -360,20 +354,20 @@ do_pgfault(struct mm_struct *mm, uint_t error_code, uintptr_t addr) {
 
     pte_t *ptep=NULL;
     /*
-    * Maybe you want help comment, BELOW comments can help you finish the code
+    * 也许你需要帮助注释，下面的注释可以帮助你完成代码
     *
-    * Some Useful MACROs and DEFINEs, you can use them in below implementation.
-    * MACROs or Functions:
-    *   get_pte : get an pte and return the kernel virtual address of this pte for la
-    *             if the PT contians this pte didn't exist, alloc a page for PT (notice the 3th parameter '1')
-    *   pgdir_alloc_page : call alloc_page & page_insert functions to allocate a page size memory & setup
-    *             an addr map pa<--->la with linear address la and the PDT pgdir
-    * DEFINES:
-    *   VM_WRITE  : If vma->vm_flags & VM_WRITE == 1/0, then the vma is writable/non writable
-    *   PTE_W           0x002                   // page table/directory entry flags bit : Writeable
-    *   PTE_U           0x004                   // page table/directory entry flags bit : User can access
-    * VARIABLES:
-    *   mm->pgdir : the PDT of these vma
+    * 一些有用的宏和定义，你可以在下面的实现中使用它们。
+    * 宏或函数:
+    *   get_pte : 获取一个页表项并返回该页表项的内核虚拟地址
+    *             如果页表中不存在该页表项，则为页表分配一个页面（注意第三个参数 '1'）
+    *   pgdir_alloc_page : 调用 alloc_page 和 page_insert 函数分配一个页面大小的内存，并设置
+    *             一个地址映射 pa<--->la，使用线性地址 la 和页目录表 pgdir
+    * 定义:
+    *   VM_WRITE  : 如果 vma->vm_flags & VM_WRITE == 1/0，则 vma 是可写/不可写的
+    *   PTE_W           0x002                   // 页表/目录项标志位: 可写
+    *   PTE_U           0x004                   // 页表/目录项标志位: 用户可访问
+    * 变量:
+    *   mm->pgdir : 这些 vma 的页目录表
     *
     */
 

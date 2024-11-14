@@ -23,9 +23,9 @@ PMP1: 0x0000000000000000-0xffffffffffffffff (A,R,W,X)
 
 Special kernel symbols:
   entry  0xc0200032 (virtual)
-  etext  0xc0204474 (virtual)
+  etext  0xc0204424 (virtual)
   edata  0xc020a040 (virtual)
-  end    0xc0211570 (virtual)
+  end    0xc021156c (virtual)
 Kernel executable memory footprint: 70KB
 memory management: default_pmm_manager
 membegin 80200000 memend 88000000 mem_size 7e00000
@@ -55,48 +55,16 @@ page fault at 0x00004000: K/W
 set up init env for check_swap over!
 Store/AMO page fault
 page fault at 0x00005000: K/W
-[调试信息]update_visited()
-[调试信息]页表项=20115cd7
-[调试信息]0x1000的page->visited=1
-[调试信息]update_visited()
-[调试信息]页表项=201160d7
-[调试信息]0x2000的page->visited=1
-[调试信息]update_visited()
-[调试信息]页表项=201164d7
-[调试信息]0x3000的page->visited=1
-[调试信息]update_visited()
-[调试信息]页表项=201168d7
-[调试信息]0x4000的page->visited=1
-[调试信息]update_visited()
-[调试信息]页表项=20115c97
-[调试信息]0x1000的page->visited=0
 curr_ptr 0xffffffffc02258a8
 swap_out: i 0, store page in vaddr 0x1000 to disk swap entry 2
 Load page fault
 page fault at 0x00001000: K/R
-[调试信息]update_visited()
-[调试信息]页表项=20116097
-[调试信息]0x2000的page->visited=0
 curr_ptr 0xffffffffc02258f0
 swap_out: i 0, store page in vaddr 0x2000 to disk swap entry 3
 swap_in: load disk swap entry 2 with swap_page in vadr 0x1000
 count is 1, total is 8
 check_swap() succeeded!
 ++ setup timer interrupts
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
-100 ticks
 100 ticks
 100 ticks
 100 ticks

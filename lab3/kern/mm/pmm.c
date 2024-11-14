@@ -46,8 +46,7 @@ static void init_memmap(struct Page *base, size_t n) {
     pmm_manager->init_memmap(base, n);
 }
 
-// alloc_pages - call pmm->alloc_pages to allocate a continuous n*PAGESIZE
-// memory
+// alloc_pages - 调用 pmm->alloc_pages 分配连续的 n*PAGESIZE 内存
 struct Page *alloc_pages(size_t n) {
     struct Page *page = NULL;
     bool intr_flag;
@@ -218,42 +217,33 @@ void pmm_init(void) {
 
 }
 
-// get_pte - get pte and return the kernel virtual address of this pte for la
-//        - if the PT contians this pte didn't exist, alloc a page for PT
-// 功能:获取指针并返回虚拟地址的pte内核虚拟地址
-//     -如果页目录表不存在此pte，请为PT分配一个页面
-// parameter:
-//  pgdir:  the kernel virtual base address of PDT
-//  la:     the linear address need to map
-//  create: a logical value to decide if alloc a page for PT
-// return vaule: the kernel virtual address of this pte
+// get_pte - 获取页表项并返回该页表项的内核虚拟地址
+//     - 如果页目录表中不存在此页表项，请为页表分配一个页面
+// 参数:
+//  pgdir:  页目录表的内核虚拟基地址
+//  la:     需要映射的线性地址
+//  create: 一个逻辑值，用于决定是否为页表分配一个页面
+// 返回值: 该页表项的内核虚拟地址
 pte_t *get_pte(pde_t *pgdir, uintptr_t la, bool create) {
     /*
      *
-     * If you need to visit a physical address, please use KADDR()
-     * please read pmm.h for useful macros
+     * 如果需要访问物理地址，请使用 KADDR()
+     * 请阅读 pmm.h 以获取有用的宏
      *
-     * Maybe you want help comment, BELOW comments can help you finish the code
+     * 也许你需要帮助注释，下面的注释可以帮助你完成代码
      *
-     * Some Useful MACROs and DEFINEs, you can use them in below implementation.
-     * MACROs or Functions:
-     *   PDX(la) = the index of page directory entry of VIRTUAL ADDRESS la.
-     *   KADDR(pa) : takes a physical address and returns the corresponding
-     * kernel virtual address.
-     *   set_page_ref(page,1) : means the page be referenced by one time
-     *   page2pa(page): get the physical address of memory which this (struct
-     * Page *) page  manages
-     *   struct Page * alloc_page() : allocation a page
-     *   memset(void *s, char c, size_t n) : sets the first n bytes of the
-     * memory area pointed by s
-     *                                       to the specified value c.
-     * DEFINEs:
-     *   PTE_P           0x001                   // page table/directory entry
-     * flags bit : Present
-     *   PTE_W           0x002                   // page table/directory entry
-     * flags bit : Writeable
-     *   PTE_U           0x004                   // page table/directory entry
-     * flags bit : User can access
+     * 一些有用的宏和定义，你可以在下面的实现中使用它们。
+     * 宏或函数:
+     *   PDX(la) = 虚拟地址 la 的页目录项索引。
+     *   KADDR(pa) : 获取一个物理地址并返回相应的内核虚拟地址。
+     *   set_page_ref(page,1) : 表示该页面被引用了一次
+     *   page2pa(page): 获取该 (struct Page *) page 管理的内存的物理地址
+     *   struct Page * alloc_page() : 分配一个页面
+     *   memset(void *s, char c, size_t n) : 将指针 s 指向的内存区域的前 n 个字节设置为指定值 c。
+     * 定义:
+     *   PTE_P           0x001                   // 页表/目录项标志位: 存在
+     *   PTE_W           0x002                   // 页表/目录项标志位: 可写
+     *   PTE_U           0x004                   // 页表/目录项标志位: 用户可访问
      */
     pde_t *pdep1 = &pgdir[PDX1(la)];    // 根据虚拟地址的30-38位从页目录表（三级页表）获取三级页表项（从0开始编号）
     if (!(*pdep1 & PTE_V))              // 如果页表项是否无效
@@ -344,14 +334,14 @@ void page_remove(pde_t *pgdir, uintptr_t la) {
     }
 }
 
-// page_insert - build the map of phy addr of an Page with the linear addr la
-// paramemters:
-//  pgdir: the kernel virtual base address of PDT
-//  page:  the Page which need to map
-//  la:    the linear address need to map
-//  perm:  the permission of this Page which is setted in related pte
-// return value: always 0
-// note: PT is changed, so the TLB need to be invalidate
+// page_insert - 建立一个 Page 的物理地址与线性地址 la 的映射
+// 参数:
+//  pgdir: 页目录表的内核虚拟基地址
+//  page:  需要映射的 Page
+//  la:    需要映射的线性地址
+//  perm:  设置在相关页表项中的 Page 权限
+// 返回值: 始终为 0
+// 注意: 页表已更改，因此需要使 TLB 失效
 int page_insert(pde_t *pgdir, struct Page *page, uintptr_t la, uint32_t perm) {
     pte_t *ptep = get_pte(pgdir, la, 1);
     if (ptep == NULL) {
@@ -375,9 +365,9 @@ int page_insert(pde_t *pgdir, struct Page *page, uintptr_t la, uint32_t perm) {
 // edited are the ones currently in use by the processor.
 void tlb_invalidate(pde_t *pgdir, uintptr_t la) { flush_tlb(); }
 
-// pgdir_alloc_page - call alloc_page & page_insert functions to
-//                  - allocate a page size memory & setup an addr map
-//                  - pa<->la with linear address la and the PDT pgdir
+// pgdir_alloc_page - 调用 alloc_page 和 page_insert 函数
+//                  - 分配一个页面大小的内存并设置地址映射
+//                  - 使用线性地址 la 和页目录表 pgdir 建立 pa<->la 的映射
 struct Page *pgdir_alloc_page(pde_t *pgdir, uintptr_t la, uint32_t perm) {
     struct Page *page = alloc_page();
     if (page != NULL) {
