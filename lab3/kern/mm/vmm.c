@@ -61,7 +61,7 @@ static void check_vmm(void);
 static void check_vma_struct(void);
 static void check_pgfault(void);
 
-// mm_create -  alloc a mm_struct & initialize it.
+// mm_create -  创建并初始化一个mm_struct
 struct mm_struct *
 mm_create(void) {
     struct mm_struct *mm = kmalloc(sizeof(struct mm_struct));
@@ -78,7 +78,7 @@ mm_create(void) {
     return mm;
 }
 
-// vma_create - alloc a vma_struct & initialize it. (addr range: vm_start~vm_end)
+// vma_create - 创建并初始化一个vma_struct (addr range: vm_start~vm_end)
 struct vma_struct *
 vma_create(uintptr_t vm_start, uintptr_t vm_end, uint_t vm_flags) {
     struct vma_struct *vma = kmalloc(sizeof(struct vma_struct));
@@ -92,13 +92,15 @@ vma_create(uintptr_t vm_start, uintptr_t vm_end, uint_t vm_flags) {
 }
 
 
-// find_vma - find a vma  (vma->vm_start <= addr <= vma_vm_end)
+// find_vma - 在mm中查找一个vma  (vma->vm_start <= addr <= vma_vm_end)
 struct vma_struct *
 find_vma(struct mm_struct *mm, uintptr_t addr) {
     struct vma_struct *vma = NULL;
-    if (mm != NULL) {
+    if (mm != NULL) 
+    {
         vma = mm->mmap_cache;
-        if (!(vma != NULL && vma->vm_start <= addr && vma->vm_end > addr)) {
+        if (!(vma != NULL && vma->vm_start <= addr && vma->vm_end > addr)) // 如果不是<缓存非空且地址区间正确>
+        {
                 bool found = 0;
                 list_entry_t *list = &(mm->mmap_list), *le = list;
                 while ((le = list_next(le)) != list) {
@@ -112,7 +114,8 @@ find_vma(struct mm_struct *mm, uintptr_t addr) {
                     vma = NULL;
                 }
         }
-        if (vma != NULL) {
+        if (vma != NULL) 
+        {
             mm->mmap_cache = vma;
         }
     }
@@ -129,7 +132,7 @@ check_vma_overlap(struct vma_struct *prev, struct vma_struct *next) {
 }
 
 
-// insert_vma_struct -insert vma in mm's list link
+// insert_vma_struct -将vma插入mm的链表
 void
 insert_vma_struct(struct mm_struct *mm, struct vma_struct *vma) {
     assert(vma->vm_start < vma->vm_end);

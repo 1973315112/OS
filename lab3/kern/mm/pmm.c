@@ -55,7 +55,7 @@ struct Page *alloc_pages(size_t n) {
         local_intr_save(intr_flag);
         { page = pmm_manager->alloc_pages(n); }
         local_intr_restore(intr_flag);
-
+        //如果n>1, 说明希望分配多个连续的页面，但是我们换出页面的时候并不能换出连续的页面
         if (page != NULL || n > 1 || swap_init_ok == 0) break;
 
         extern struct mm_struct *check_mm_struct;

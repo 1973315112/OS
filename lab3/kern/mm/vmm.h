@@ -15,8 +15,8 @@ struct vma_struct {
     struct mm_struct *vm_mm; // 使用相同PDT的vma集合
     uintptr_t vm_start;      // vma的起始地址    
     uintptr_t vm_end;        // vma的结束地址，不包括vm_end本身
-    uint_t vm_flags;         // vma标志
-    list_entry_t list_link;  // 按vma起始地址排序的有序链表
+    uint_t vm_flags;         // vma标志(权限)
+    list_entry_t list_link;  // 按vma起始地址排序的有序链表节点
 };
 
 #define le2vma(le, member)                  \
