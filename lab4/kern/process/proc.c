@@ -45,16 +45,16 @@ older sibling:    proc->optr    (proc是新的兄弟进程)
 younger sibling:  proc->yptr    (proc是老的兄弟进程)
 -----------------------------
 进程的相关系统调用:
-SYS_exit        : process exit,                           -->do_exit
-SYS_fork        : create child process, dup mm            -->do_fork-->wakeup_proc
-SYS_wait        : wait process                            -->do_wait
-SYS_exec        : after fork, process execute a program   -->load a program and refresh the mm
-SYS_clone       : create child thread                     -->do_fork-->wakeup_proc
-SYS_yield       : process flag itself need resecheduling, -- proc->need_sched=1, then scheduler will rescheule this process
-SYS_sleep       : process sleep                           -->do_sleep 
-SYS_kill        : kill process                            -->do_kill-->proc->flags |= PF_EXITING
-                                                                 -->wakeup_proc-->do_wait-->do_exit   
-SYS_getpid      : get the process's pid
+SYS_exit        : 进程退出                              -->do_exit
+SYS_fork        : 创建子进程，复制内存管理                 -->do_fork-->wakeup_proc
+SYS_wait        : 等待进程                              -->do_wait
+SYS_exec        : 在 fork 之后，进程执行一个程序           -->加载程序并刷新内存管理
+SYS_clone       : 创建子线程                            -->do_fork-->wakeup_proc
+SYS_yield       : 进程标记自身需要重新调度                 -->proc->need_sched=1，然后调度器将重新调度该进程
+SYS_sleep       : 进程休眠                              -->do_sleep 
+SYS_kill        : 杀死进程                              -->do_kill-->proc->flags |= PF_EXITING
+                                                       -->wakeup_proc-->do_wait-->do_exit   
+SYS_getpid      : 获取进程的 pid
 
 */
 
@@ -194,14 +194,14 @@ proc_run(struct proc_struct *proc) {
         *   lcr3():                   修改CR3寄存器的值
         *   switch_to():              两个进程之间的上下文切换
         */
-       int x;
-       struct  proc_struct *prev = current;
-       local_intr_save(x);
-       {
-           current = proc;
-           lcr3(proc->cr3);
-           switch_to(&(prev->context), &(proc->context));
-       }
+        int x;
+        struct  proc_struct *prev = current;
+        local_intr_save(x);
+        {
+            current = proc;
+            lcr3(proc->cr3);
+            switch_to(&(prev->context), &(proc->context));
+        }
         local_intr_restore(x);
        
 //################################################################################
@@ -249,14 +249,25 @@ find_proc(int pid) {
  * 功能:使用fn()函数创建内核线程
  * 注:临时trapframe tf的内容将被复制到do_fork-->copy_thread函数中的proc->tf(the contents of temp trapframe tf will be copied to proc->tf in do_fork-->copy_thread function)
  */
-int
-kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags) {
+int kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags) {
+    // 对trameframe，也就是我们程序的一些上下文进行一些初始化
     struct trapframe tf;
     memset(&tf, 0, sizeof(struct trapframe));
-    tf.gpr.s0 = (uintptr_t)fn;
-    tf.gpr.s1 = (uintptr_t)arg;
+
+    // 设置内核线程的参数和函数指针
+    tf.gpr.s0 = (uintptr_t)fn; // s0 寄存器保存函数指针
+    tf.gpr.s1 = (uintptr_t)arg; // s1 寄存器保存函数参数
+
+    // 设置 trapframe 中的 status 寄存器（SSTATUS）
+    // SSTATUS_SPP：Supervisor Previous Privilege（设置为 supervisor 模式，因为这是一个内核线程）
+    // SSTATUS_SPIE：Supervisor Previous Interrupt Enable（设置为启用中断，因为这是一个内核线程）
+    // SSTATUS_SIE：Supervisor Interrupt Enable（设置为禁用中断，因为我们不希望该线程被中断）
     tf.status = (read_csr(sstatus) | SSTATUS_SPP | SSTATUS_SPIE) & ~SSTATUS_SIE;
+
+    // 将入口点（epc）设置为 kernel_thread_entry 函数，作用实际上是将pc指针指向它(*trapentry.S会用到)
     tf.epc = (uintptr_t)kernel_thread_entry;
+
+    // 使用 do_fork 创建一个新进程（内核线程），这样才真正用设置的tf创建新进程。
     return do_fork(clone_flags | CLONE_VM, 0, &tf);
 }
 
