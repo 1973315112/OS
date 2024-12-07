@@ -1,4 +1,4 @@
-# lab实验报告
+# Lab4实验报告
 该实验报告和完整代码已上传[github](https://github.com/1973315112/OS)
 
 # 练习1：分配并初始化一个进程控制块（需要编码）
@@ -31,7 +31,7 @@ alloc_proc(void) {
      *       struct mm_struct *mm;                       // 进程的内存管理器(field)
      *       struct context context;                     // 在此处切换以运行进程(Switch here to run process)
      *       struct trapframe *tf;                       // 当前中断的陷入表(Trap frame for current interrupt)
-     *       uintptr_t cr3;                              // CR3寄存器：二级页表（Page Directroy Table，PDT）的基地址
+     *       uintptr_t cr3;                              // CR3寄存器：页目录表（Page Directroy Table，PDT）的基地址
      *       uint32_t flags;                             // 进程标志
      *       char name[PROC_NAME_LEN + 1];               // 进程名称
      */
@@ -77,7 +77,7 @@ struct proc_struct {
     struct mm_struct *mm;                       // 进程的内存管理器(field)
     struct context context;                     // 在此处切换以运行进程(Switch here to run process)
     struct trapframe *tf;                       // 当前中断的陷入表(Trap frame for current interrupt)
-    uintptr_t cr3;                              // CR3寄存器：二级页表（Page Directroy Table，PDT）的基地址
+    uintptr_t cr3;                              // CR3寄存器：页目录表（Page Directroy Table，PDT）的基地址
     uint32_t flags;                             // 进程标志
     char name[PROC_NAME_LEN + 1];               // 进程名称
     list_entry_t list_link;                     // 进程链表

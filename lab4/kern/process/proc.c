@@ -203,7 +203,6 @@ proc_run(struct proc_struct *proc) {
             switch_to(&(prev->context), &(proc->context));
         }
         local_intr_restore(x);
-       
 //################################################################################
     }
 }
@@ -304,13 +303,15 @@ copy_mm(uint32_t clone_flags, struct proc_struct *proc) {
  */
 static void
 copy_thread(struct proc_struct *proc, uintptr_t esp, struct trapframe *tf) {
+    // 在分配的内核栈上分配出一片空间来保存trapframe
     proc->tf = (struct trapframe *)(proc->kstack + KSTACKSIZE - sizeof(struct trapframe));
     *(proc->tf) = *tf;
 
     // Set a0 to 0 so a child process knows it's just forked
+    // 将trapframe中的a0寄存器（返回值）设置为0，说明这个进程是一个子进程
     proc->tf->gpr.a0 = 0;
     proc->tf->gpr.sp = (esp == 0) ? (uintptr_t)proc->tf : esp;
-
+    // 将上下文中的ra设置为了forkret函数的入口，并且把trapframe放在上下文的栈顶
     proc->context.ra = (uintptr_t)forkret;
     proc->context.sp = (uintptr_t)(proc->tf);
 }
@@ -357,19 +358,17 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
      * 6.调用wakeup_proc将新的子进程的状态设为RUNNABLE
      * 7.使用子进程的pid设置返回值(ret vaule)
      */
-     proc=alloc_proc();//1
-     proc->parent=current;
-     proc->pid=get_pid();
-     setup_kstack(proc);//2
-     copy_mm(clone_flags,proc);//3
-     copy_thread(proc,stack,tf);//4
-     hash_proc(proc);//5
-     list_add_before(&proc_list,&proc->list_link);
-     nr_process+=1;
-     wakeup_proc(proc);//6
-     ret=proc->pid;
-
-
+    proc=alloc_proc();//1
+    proc->parent=current;
+    proc->pid=get_pid();
+    setup_kstack(proc);//2
+    copy_mm(clone_flags,proc);//3
+    copy_thread(proc,stack,tf);//4
+    hash_proc(proc);//5
+    list_add_before(&proc_list,&proc->list_link);
+    nr_process+=1;
+    wakeup_proc(proc);//6
+    ret=proc->pid;
 //################################################################################
 fork_out:
     return ret;
