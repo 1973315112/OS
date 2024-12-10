@@ -104,12 +104,32 @@ alloc_proc(void) {
      *       char name[PROC_NAME_LEN + 1];               // Process name
      */
 
-     //LAB5 YOUR CODE : (update LAB4 steps)
+     //LAB5 2213917 CODE : (update LAB4 steps)
      /*
      * below fields(add in LAB5) in proc_struct need to be initialized  
      *       uint32_t wait_state;                        // waiting state
      *       struct proc_struct *cptr, *yptr, *optr;     // relations between processes
+     * proc_struct中的以下字段（在LAB5中的添加）需要初始化
+     *       uint32_t wait_state;                        // 等待状态
+     *       struct proc_struct *cptr, *yptr, *optr;     // 进程之间的关系
      */
+        proc->state        = PROC_UNINIT;
+        proc->pid          = -1;                                    
+        proc->runs         = 0; 
+        proc->kstack       = 0;    
+        proc->need_resched = 0;
+        proc->parent       = NULL;
+        proc->mm           = NULL;
+        memset(&(proc->context), 0, sizeof(struct context));
+        proc->tf           = NULL;
+        proc->cr3          = boot_cr3;
+        proc->flags        = 0;
+        memset(proc->name, 0, PROC_NAME_LEN+1);
+
+        proc->wait_state   = 0;
+        proc->cptr         = NULL;
+        proc->yptr         = NULL;
+        proc->optr         = NULL;
     }
     return proc;
 }
@@ -206,7 +226,15 @@ proc_run(struct proc_struct *proc) {
         *   lcr3():                   Modify the value of CR3 register
         *   switch_to():              Context switching between two processes
         */
-
+        int x;
+        struct  proc_struct *prev = current;
+        local_intr_save(x);
+        {
+            current = proc;
+            lcr3(proc->cr3);
+            switch_to(&(prev->context), &(proc->context));
+        }
+        local_intr_restore(x);
     }
 }
 
@@ -395,15 +423,38 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     //    6. call wakeup_proc to make the new child process RUNNABLE
     //    7. set ret vaule using child proc's pid
 
-    //LAB5 YOUR CODE : (update LAB4 steps)
+    //LAB5 22213917 CODE : (update LAB4 steps)
     //TIPS: you should modify your written code in lab4(step1 and step5), not add more code.
    /* Some Functions
     *    set_links:  set the relation links of process.  ALSO SEE: remove_links:  lean the relation links of process 
     *    -------------------
     *    update step 1: set child proc's parent to current process, make sure current process's wait_state is 0
     *    update step 5: insert proc_struct into hash_list && proc_list, set the relation links of process
+    * 
+    * 注意：你应该在lab4（步骤1和步骤5）中修改你写的代码，而不是添加更多的代码。
+    * 一些函数:
+    * set_links：设置流程的关系链接。另请参见：remove_links：精简流程的关系链接
+    * 更新步骤1：将子进程的父进程设置为当前进程，确保当前进程的wait_state为0
+    * 更新步骤5：将procstruct插入hash_list和proclist，设置进程的关系链接
     */
- 
+    if((proc = alloc_proc()) == NULL) goto fork_out;
+    proc->parent = current;
+    assert(current->wait_state == 0); // 更新步骤1：将子进程的父进程设置为当前进程，确保当前进程的wait_state为0
+    if(setup_kstack(proc) != 0) goto bad_fork_cleanup_proc;
+    if(copy_mm(clone_flags, proc) != 0) goto bad_fork_cleanup_kstack;
+    copy_thread(proc, stack, tf);
+    // 更新步骤5：将procstruct插入hash_list和proclist，设置进程的关系链接
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    {
+        proc->pid = get_pid();
+        hash_proc(proc);
+        set_links(proc);
+    }
+    local_intr_restore(intr_flag);
+    wakeup_proc(proc);
+    ret = proc->pid;
+
 fork_out:
     return ret;
 
@@ -595,15 +646,23 @@ load_icode(unsigned char *binary, size_t size) {
     // Keep sstatus
     uintptr_t sstatus = tf->status;
     memset(tf, 0, sizeof(struct trapframe));
-    /* LAB5:EXERCISE1 YOUR CODE
+    /* LAB5:EXERCISE1 2213917 CODE
      * should set tf->gpr.sp, tf->epc, tf->status
      * NOTICE: If we set trapframe correctly, then the user level process can return to USER MODE from kernel. So
      *          tf->gpr.sp should be user stack top (the value of sp)
      *          tf->epc should be entry point of user program (the value of sepc)
      *          tf->status should be appropriate for user program (the value of sstatus)
      *          hint: check meaning of SPP, SPIE in SSTATUS, use them by SSTATUS_SPP, SSTATUS_SPIE(defined in risv.h)
+     * 应设置tf->gpr.sp, tf->epc, tf->status
+     * 注意:如果我们正确设置了trapframe，那么用户级进程可以从内核返回到user MODE。所以
+     * tf->gpr.sp应该是用户堆栈顶部（sp的值）
+     * tf->epc应该是用户程序的入口点（sepc的值）
+     * tf->status应该适合用户程序（sstatus的值）
+     * 提示：检查SSTATUS中SPP、SPIE的含义，由SSTATUS_SPP、SSTATUS_SPIE（在risv.h中定义）使用它们
      */
-
+    tf->gpr.sp = USTACKTOP; // tf->gpr.sp应该是用户堆栈顶部（sp的值）
+    tf->epc = elf->e_entry; // tf->epc应该是用户程序的入口点（sepc的值）
+    tf->status = sstatus & ~(SSTATUS_SPP | SSTATUS_SPIE); // tf->status应该适合用户程序（sstatus的值）
 
     ret = 0;
 out:
@@ -819,6 +878,7 @@ init_main(void *arg) {
     cprintf("init check memory pass.\n");
     return 0;
 }
+
 
 // proc_init - set up the first kernel thread idleproc "idle" by itself and 
 //           - create the second kernel thread init_main

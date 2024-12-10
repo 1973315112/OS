@@ -370,7 +370,7 @@ int copy_range(pde_t *to, pde_t *from, uintptr_t start, uintptr_t end,
             assert(page != NULL);
             assert(npage != NULL);
             int ret = 0;
-            /* LAB5:EXERCISE2 YOUR CODE
+            /* LAB5:EXERCISE2 2213917 CODE
              * replicate content of page to npage, build the map of phy addr of
              * nage with the linear addr start
              *
@@ -387,8 +387,22 @@ int copy_range(pde_t *to, pde_t *from, uintptr_t start, uintptr_t end,
              * (2) find dst_kvaddr: the kernel virtual address of npage
              * (3) memory copy from src_kvaddr to dst_kvaddr, size is PGSIZE
              * (4) build the map of phy addr of  nage with the linear addr start
+             * 将页面内容复制到npage，以线性地址开头构建nage的phy地址图
+             * 一些有用的MACRO和DEFINE，您可以在下面的实现中使用它们。
+             * MACRO或功能：
+             * page2kva（struct Page*Page）：返回页面管理的内存的内核虚拟地址（SEE pmm.h）
+             * page_insert：使用线性addr-la构建页面的phy地址映射
+             * memcpy：典型的内存复制功能
+             * 
+             * (1)找到src_kvaddr：page的内核虚拟地址
+             * (2)找到dst_kvaddr：npage的内核虚拟地址
+             * (3)从src_kvaddr到dst_kvadr的内存复制，大小为PGSIZE
+             * (4)以线性addr开头构建nage的phy地址图
              */
-
+            uintptr_t* src_kvaddr = page2kva(page);
+            uintptr_t* dst_kvaddr = page2kva(npage);
+            memcpy(dst_kvaddr, src_kvaddr, PGSIZE);
+            ret = page_insert(to, npage, start, perm);
 
             assert(ret == 0);
         }
