@@ -335,7 +335,7 @@ void exit_range(pde_t *pgdir, uintptr_t start, uintptr_t end) {
         d0start = d1start;
     } while (d1start != 0 && d1start < end);
 }
-/* copy_range - copy content of memory (start, end) of one process A to another
+/* copy_range - 将一个进程A的内存内容（开始、结束）复制到另一个进程(copy content of memory (start, end) of one process A to another)
  * process B
  * @to:    the addr of process B's Page Directory
  * @from:  the addr of process A's Page Directory

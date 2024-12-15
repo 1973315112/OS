@@ -8,6 +8,7 @@
 #include <riscv.h>
 #include <swap.h>
 #include <kmalloc.h>
+#include <cow.h>
 
 /* 
   vmm design include two parts: mm_struct (mm) & vma_struct (vma)
@@ -205,6 +206,9 @@ dup_mmap(struct mm_struct *to, struct mm_struct *from) {
         if (copy_range(to->pgdir, from->pgdir, vma->vm_start, vma->vm_end, share) != 0) {
             return -E_NO_MEM;
         }
+        /*if (shared_read_state(to->pgdir, from->pgdir, vma->vm_start, vma->vm_end, share) != 0) {
+            return -E_NO_MEM;
+        }*/
     }
     return 0;
 }
