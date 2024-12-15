@@ -15,6 +15,7 @@
 
 bool shared_read_state(pde_t *to, pde_t *from, uintptr_t start, uintptr_t end,bool share)
 {
+    cprintf("COW:以共享只读状态创建子进程\n");
     assert(start % PGSIZE == 0 && end % PGSIZE == 0);
     assert(USER_ACCESS(start, end));
     // copy content by page unit.
@@ -53,6 +54,7 @@ bool shared_read_state(pde_t *to, pde_t *from, uintptr_t start, uintptr_t end,bo
 
 int privated_write_state(struct mm_struct *mm, uint_t error_code, uintptr_t addr)
 {
+    cprintf("COW:由共享只读状态变为私有可写状态\n");
     pte_t *ptep = get_pte(mm->pgdir, addr, 0);
     uint32_t perm = (*ptep & PTE_USER | PTE_W);
     uintptr_t start = ROUNDDOWN(addr, PGSIZE);

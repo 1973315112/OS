@@ -4,5 +4,4 @@ obj/kern/trap/trap.o obj/kern/trap/trap.d: kern/trap/trap.c libs/defs.h \
  libs/stdarg.h kern/debug/assert.h kern/driver/console.h kern/mm/vmm.h \
  kern/sync/sync.h kern/driver/intr.h kern/schedule/sched.h \
  kern/process/proc.h kern/mm/swap.h kern/mm/pmm.h kern/debug/kdebug.h \
- libs/unistd.h kern/syscall/syscall.h libs/error.h libs/sbi.h \
- kern/mm/cow.h kern/mm/default_pmm.h kern/mm/kmalloc.h libs/string.h
+ libs/unistd.h kern/syscall/syscall.h libs/error.h libs/sbi.h

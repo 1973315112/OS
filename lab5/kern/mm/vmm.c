@@ -203,12 +203,8 @@ dup_mmap(struct mm_struct *to, struct mm_struct *from) {
         insert_vma_struct(to, nvma);
 
         bool share = 0;
-        if (copy_range(to->pgdir, from->pgdir, vma->vm_start, vma->vm_end, share) != 0) {
-            return -E_NO_MEM;
-        }
-        /*if (shared_read_state(to->pgdir, from->pgdir, vma->vm_start, vma->vm_end, share) != 0) {
-            return -E_NO_MEM;
-        }*/
+        //if (copy_range(to->pgdir, from->pgdir, vma->vm_start, vma->vm_end, share) != 0) return -E_NO_MEM;
+        if (shared_read_state(to->pgdir, from->pgdir, vma->vm_start, vma->vm_end, share) != 0) return -E_NO_MEM;
     }
     return 0;
 }
@@ -425,7 +421,16 @@ do_pgfault(struct mm_struct *mm, uint_t error_code, uintptr_t addr) {
     ret = -E_NO_MEM;
 
     pte_t *ptep=NULL;
-  
+
+    // COW
+    if ((ptep = get_pte(mm->pgdir, addr, 0)) != NULL) 
+    {
+        if((*ptep & PTE_V) & ~(*ptep & PTE_W)) 
+        {
+            return privated_write_state(mm, error_code, addr);
+        }
+    }
+
     // try to find a pte, if pte's PT(Page Table) isn't existed, then create a PT.
     // (notice the 3th parameter '1')
     if ((ptep = get_pte(mm->pgdir, addr, 1)) == NULL) {
