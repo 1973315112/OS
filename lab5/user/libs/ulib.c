@@ -6,6 +6,8 @@
 void
 exit(int error_code) {
     sys_exit(error_code);
+    //执行完sys_exit后，按理说进程就结束了，后面的语句不应该再执行，
+    //所以执行到这里就说明exit失败了
     cprintf("BUG: exit failed.\n");
     while (1);
 }

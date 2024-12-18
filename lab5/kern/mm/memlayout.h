@@ -1,28 +1,28 @@
 #ifndef __KERN_MM_MEMLAYOUT_H__
 #define __KERN_MM_MEMLAYOUT_H__
 
-/* This file contains the definitions for memory management in our OS. */
+/* 该文件包含操作系统中内存管理的定义。 */
 
 /* *
- * Virtual memory map:                                          Permissions
- *                                                              kernel/user
+ * 虚拟内存映射:                                          权限
+ *                                                        内核/用户
  *
  *     4G ------------------> +---------------------------------+
  *                            |                                 |
- *                            |         Empty Memory (*)        |
+ *                            |          空内存 (*)              |
  *                            |                                 |
  *                            +---------------------------------+ 0xFB000000
- *                            |   Cur. Page Table (Kern, RW)    | RW/-- PTSIZE
+ *                            |     当前页表 (内核, 读写)         | RW/-- PTSIZE
  *     VPT -----------------> +---------------------------------+ 0xFAC00000
- *                            |        Invalid Memory (*)       | --/--
+ *                            |         无效内存 (*)             | --/--
  *     KERNTOP -------------> +---------------------------------+ 0xF8000000
  *                            |                                 |
- *                            |    Remapped Physical Memory     | RW/-- KMEMSIZE
+ *                            |       重新映射的物理内存           | RW/-- KMEMSIZE
  *                            |                                 |
  *     KERNBASE ------------> +---------------------------------+ 0xC0000000
- *                            |        Invalid Memory (*)       | --/--
+ *                            |         无效内存 (*)             | --/--
  *     USERTOP -------------> +---------------------------------+ 0xB0000000
- *                            |           User stack            |
+ *                            |            用户栈                |
  *                            +---------------------------------+
  *                            |                                 |
  *                            :                                 :
@@ -30,17 +30,16 @@
  *                            :                                 :
  *                            |                                 |
  *                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *                            |       User Program & Heap       |
+ *                            |         用户程序和堆              |
  *     UTEXT ---------------> +---------------------------------+ 0x00800000
- *                            |        Invalid Memory (*)       | --/--
+ *                            |         无效内存 (*)             | --/--
  *                            |  - - - - - - - - - - - - - - -  |
- *                            |    User STAB Data (optional)    |
+ *                            |      用户 STAB 数据 (可选)        |
  *     USERBASE, USTAB------> +---------------------------------+ 0x00200000
- *                            |        Invalid Memory (*)       | --/--
+ *                            |         无效内存 (*)             | --/--
  *     0 -------------------> +---------------------------------+ 0x00000000
- * (*) Note: The kernel ensures that "Invalid Memory" is *never* mapped.
- *     "Empty Memory" is normally unmapped, but user programs may map pages
- *     there if desired.
+ * (*) 注意: 内核确保“无效内存”*永远*不会被映射。
+ *     “空内存”通常未映射，但用户程序可以根据需要映射页面。
  *
  * */
 

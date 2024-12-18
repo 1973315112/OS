@@ -212,15 +212,15 @@ dup_mmap(struct mm_struct *to, struct mm_struct *from) {
 void
 exit_mmap(struct mm_struct *mm) {
     assert(mm != NULL && mm_count(mm) == 0);
-    pde_t *pgdir = mm->pgdir;
+    pde_t *pgdir = mm->pgdir; // 获取进程页表
     list_entry_t *list = &(mm->mmap_list), *le = list;
-    while ((le = list_next(le)) != list) {
+    while ((le = list_next(le)) != list) { // 遍历 mm->mmap_list 链表
         struct vma_struct *vma = le2vma(le, list_link);
-        unmap_range(pgdir, vma->vm_start, vma->vm_end);
+        unmap_range(pgdir, vma->vm_start, vma->vm_end); // 解除该内存区域在页目录中的映射关系。这一步将虚拟地址范围从物理内存中解绑，释放相应的资源。
     }
-    while ((le = list_next(le)) != list) {
+    while ((le = list_next(le)) != list) { // 再次遍历 mm->mmap_list 链表。
         struct vma_struct *vma = le2vma(le, list_link);
-        exit_range(pgdir, vma->vm_start, vma->vm_end);
+        exit_range(pgdir, vma->vm_start, vma->vm_end); // 释放和清理指定虚拟地址范围内的页表和页目录，从而回收内存资源。
     }
 }
 
@@ -484,6 +484,7 @@ failed:
 
 bool
 user_mem_check(struct mm_struct *mm, uintptr_t addr, size_t len, bool write) {
+    //检查从addr开始长为len的一段内存能否被用户态程序访问
     if (mm != NULL) {
         if (!USER_ACCESS(addr, addr + len)) {
             return 0;

@@ -294,29 +294,25 @@ void exit_range(pde_t *pgdir, uintptr_t start, uintptr_t end) {
     d1start = ROUNDDOWN(start, PDSIZE);
     d0start = ROUNDDOWN(start, PTSIZE);
     do {
-        // level 1 page directory entry
+        // 一级页目录项
         pde1 = pgdir[PDX1(d1start)];
-        // if there is a valid entry, get into level 0
-        // and try to free all page tables pointed to by
-        // all valid entries in level 0 page directory,
-        // then try to free this level 0 page directory
-        // and update level 1 entry
-        if (pde1&PTE_V){
+        // 如果一级页目录项有效，进入二级页表
+        if (pde1 & PTE_V){
             pd0 = page2kva(pde2page(pde1));
-            // try to free all page tables
+            // 尝试释放所有二级页表
             free_pd0 = 1;
             do {
                 pde0 = pd0[PDX0(d0start)];
-                if (pde0&PTE_V) {
+                if (pde0 & PTE_V) {
                     pt = page2kva(pde2page(pde0));
-                    // try to free page table
+                    // 尝试释放页表
                     free_pt = 1;
-                    for (int i = 0;i <NPTEENTRY;i++)
-                        if (pt[i]&PTE_V){
+                    for (int i = 0; i < NPTEENTRY; i++)
+                        if (pt[i] & PTE_V){
                             free_pt = 0;
                             break;
                         }
-                    // free it only when all entry are already invalid
+                    // 仅当所有页表项无效时，释放页表
                     if (free_pt) {
                         free_page(pde2page(pde0));
                         pd0[PDX0(d0start)] = 0;
@@ -324,8 +320,8 @@ void exit_range(pde_t *pgdir, uintptr_t start, uintptr_t end) {
                 } else
                     free_pd0 = 0;
                 d0start += PTSIZE;
-            } while (d0start != 0 && d0start < d1start+PDSIZE && d0start < end);
-            // free level 0 page directory only when all pde0s in it are already invalid
+            } while (d0start != 0 && d0start < d1start + PDSIZE && d0start < end);
+            // 仅当所有二级页目录项无效时，释放一级页目录
             if (free_pd0) {
                 free_page(pde2page(pde1));
                 pgdir[PDX1(d1start)] = 0;

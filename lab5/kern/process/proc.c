@@ -469,44 +469,60 @@ bad_fork_cleanup_proc:
 //   1. call exit_mmap & put_pgdir & mm_destroy to free the almost all memory space of process
 //   2. set process' state as PROC_ZOMBIE, then call wakeup_proc(parent) to ask parent reclaim itself.
 //   3. call scheduler to switch to other process
+// do_exit - 由 sys_exit 调用
+//   1. 调用 exit_mmap & put_pgdir & mm_destroy 来释放进程几乎所有的内存空间
+//   2. 将进程状态设置为 PROC_ZOMBIE，然后调用 wakeup_proc(parent) 以请求父进程回收自身
+//   3. 调用调度器切换到其他进程
 int
 do_exit(int error_code) {
+    // 检查当前进程是否为idleproc或initproc，如果是，发出panic
     if (current == idleproc) {
         panic("idleproc exit.\n");
     }
     if (current == initproc) {
         panic("initproc exit.\n");
     }
+    // 获取当前进程的内存管理结构mm
     struct mm_struct *mm = current->mm;
+    // 如果mm不为空，说明是用户进程
     if (mm != NULL) {
+        // 切换到内核页表，确保接下来的操作在内核空间执行
         lcr3(boot_cr3);
+        // 如果mm引用计数减到0，说明没有其他进程共享此mm
         if (mm_count_dec(mm) == 0) {
             exit_mmap(mm);
             put_pgdir(mm);
             mm_destroy(mm);
         }
+        // 将当前进程的mm设置为NULL，表示资源已经释放
         current->mm = NULL;
     }
+    // 设置进程状态为PROC_ZOMBIE，表示进程已退出
     current->state = PROC_ZOMBIE;
     current->exit_code = error_code;
     bool intr_flag;
     struct proc_struct *proc;
+    // 关中断
     local_intr_save(intr_flag);
     {
+        // 获取当前进程的父进程
         proc = current->parent;
+        // 如果父进程处于等待子进程状态，则唤醒父进程
         if (proc->wait_state == WT_CHILD) {
             wakeup_proc(proc);
         }
+        // 遍历当前进程的所有子进程
         while (current->cptr != NULL) {
             proc = current->cptr;
             current->cptr = proc->optr;
-    
+            // 设置子进程的父进程为initproc，并加入initproc的子进程链表
             proc->yptr = NULL;
             if ((proc->optr = initproc->cptr) != NULL) {
                 initproc->cptr->yptr = proc;
             }
             proc->parent = initproc;
             initproc->cptr = proc;
+            // 如果子进程也处于退出状态，唤醒initproc
             if (proc->state == PROC_ZOMBIE) {
                 if (initproc->wait_state == WT_CHILD) {
                     wakeup_proc(initproc);
@@ -514,14 +530,21 @@ do_exit(int error_code) {
             }
         }
     }
+    // 开中断
     local_intr_restore(intr_flag);
+    // 调用调度器，选择新的进程执行
     schedule();
+    // 如果执行到这里，表示代码执行出现错误，发出panic
     panic("do_exit will not return!! %d.\n", current->pid);
 }
 
 /* load_icode - load the content of binary program(ELF format) as the new content of current process
  * @binary:  the memory addr of the content of binary program
  * @size:  the size of the content of binary program
+ */
+/* load_icode - 将二进制程序（ELF 格式）的内容加载为当前进程的新内容
+ * @binary: 二进制程序内容的内存地址
+ * @size: 二进制程序内容的大小
  */
 static int
 load_icode(unsigned char *binary, size_t size) {
@@ -531,21 +554,21 @@ load_icode(unsigned char *binary, size_t size) {
 
     int ret = -E_NO_MEM;
     struct mm_struct *mm;
-    //(1) create a new mm for current process
+    // (1) 为当前进程创建一个新的 mm
     if ((mm = mm_create()) == NULL) {
         goto bad_mm;
     }
-    //(2) create a new PDT, and mm->pgdir= kernel virtual addr of PDT
+    // (2) 创建一个新的 PDT，并将 mm->pgdir 设置为 PDT 的内核虚拟地址
     if (setup_pgdir(mm) != 0) {
         goto bad_pgdir_cleanup_mm;
     }
-    //(3) copy TEXT/DATA section, build BSS parts in binary to memory space of process
+    // (3) 复制 TEXT/DATA 部分，在进程的内存空间中构建二进制的 BSS 部分
     struct Page *page;
-    //(3.1) get the file header of the bianry program (ELF format)
+    // (3.1) 获取二进制程序的文件头（ELF 格式）
     struct elfhdr *elf = (struct elfhdr *)binary;
-    //(3.2) get the entry of the program section headers of the bianry program (ELF format)
+    //(3.2) 获取二进制程序的程序段头表入口（ELF 格式）
     struct proghdr *ph = (struct proghdr *)(binary + elf->e_phoff);
-    //(3.3) This program is valid?
+    //(3.3) 这个程序有效吗？
     if (elf->e_magic != ELF_MAGIC) {
         ret = -E_INVAL_ELF;
         goto bad_elf_cleanup_pgdir;
@@ -554,7 +577,7 @@ load_icode(unsigned char *binary, size_t size) {
     uint32_t vm_flags, perm;
     struct proghdr *ph_end = ph + elf->e_phnum;
     for (; ph < ph_end; ph ++) {
-    //(3.4) find every program section headers
+    //(3.4) 查找每个程序段的头
         if (ph->p_type != ELF_PT_LOAD) {
             continue ;
         }
@@ -565,12 +588,12 @@ load_icode(unsigned char *binary, size_t size) {
         if (ph->p_filesz == 0) {
             // continue ;
         }
-    //(3.5) call mm_map fun to setup the new vma ( ph->p_va, ph->p_memsz)
+    //(3.5) 调用 mm_map 函数来设置新的虚拟内存区域 (ph->p_va, ph->p_memsz)
         vm_flags = 0, perm = PTE_U | PTE_V;
         if (ph->p_flags & ELF_PF_X) vm_flags |= VM_EXEC;
         if (ph->p_flags & ELF_PF_W) vm_flags |= VM_WRITE;
         if (ph->p_flags & ELF_PF_R) vm_flags |= VM_READ;
-        // modify the perm bits here for RISC-V
+        // 为 RISC-V 修改权限位
         if (vm_flags & VM_READ) perm |= PTE_R;
         if (vm_flags & VM_WRITE) perm |= (PTE_W | PTE_R);
         if (vm_flags & VM_EXEC) perm |= PTE_X;
@@ -583,9 +606,9 @@ load_icode(unsigned char *binary, size_t size) {
 
         ret = -E_NO_MEM;
 
-     //(3.6) alloc memory, and  copy the contents of every program section (from, from+end) to process's memory (la, la+end)
+     //(3.6) 分配内存，并将每个程序段的内容 (from, from+end) 复制到进程的内存中 (la, la+end)
         end = ph->p_va + ph->p_filesz;
-     //(3.6.1) copy TEXT/DATA section of bianry program
+     //(3.6.1) 复制二进制程序的 TEXT/DATA 段
         while (start < end) {
             if ((page = pgdir_alloc_page(mm->pgdir, la, perm)) == NULL) {
                 goto bad_cleanup_mmap;
@@ -598,7 +621,7 @@ load_icode(unsigned char *binary, size_t size) {
             start += size, from += size;
         }
 
-      //(3.6.2) build BSS section of binary program
+      //(3.6.2) 构建二进制程序的 BSS 段
         end = ph->p_va + ph->p_memsz;
         if (start < la) {
             /* ph->p_memsz == ph->p_filesz */
@@ -625,7 +648,8 @@ load_icode(unsigned char *binary, size_t size) {
             start += size;
         }
     }
-    //(4) build user stack memory
+    
+    //(4) 构建用户堆栈内存
     vm_flags = VM_READ | VM_WRITE | VM_STACK;
     if ((ret = mm_map(mm, USTACKTOP - USTACKSIZE, USTACKSIZE, vm_flags, NULL)) != 0) {
         goto bad_cleanup_mmap;
@@ -635,13 +659,13 @@ load_icode(unsigned char *binary, size_t size) {
     assert(pgdir_alloc_page(mm->pgdir, USTACKTOP-3*PGSIZE , PTE_USER) != NULL);
     assert(pgdir_alloc_page(mm->pgdir, USTACKTOP-4*PGSIZE , PTE_USER) != NULL);
     
-    //(5) set current process's mm, sr3, and set CR3 reg = physical addr of Page Directory
+    //(5) 设置当前进程的 mm、sr3，并将 CR3 寄存器设置为页目录的物理地址增加内存管理结构体 mm 的引用计数。
     mm_count_inc(mm);
     current->mm = mm;
     current->cr3 = PADDR(mm->pgdir);
     lcr3(PADDR(mm->pgdir));
 
-    //(6) setup trapframe for user environment
+    //(6) 为用户环境设置陷阱帧
     struct trapframe *tf = current->tf;
     // Keep sstatus
     uintptr_t sstatus = tf->status;
@@ -663,6 +687,10 @@ load_icode(unsigned char *binary, size_t size) {
     tf->gpr.sp = USTACKTOP; // tf->gpr.sp应该是用户堆栈顶部（sp的值）
     tf->epc = elf->e_entry; // tf->epc应该是用户程序的入口点（sepc的值）
     tf->status = sstatus & ~(SSTATUS_SPP | SSTATUS_SPIE); // tf->status应该适合用户程序（sstatus的值）
+    // 注意我们需要让CPU进入U mode执行do_execve()加载的用户程序。
+    // 进行系统调用sys_exec之后，我们在trap返回的时候调用了sret指令，这时只要sstatus寄存器的SPP二进制位为0，
+    // 就会切换到U mode，但SPP存储的是“进入trap之前来自什么特权级”，也就是说我们这里ebreak之后SPP的数值为1，
+    // sret之后会回到S mode在内核态执行用户程序。所以load_icode()函数在构造新进程的时候，会把SSTATUS_SPP设置为0，使得sret的时候能回到U mode。
 
     ret = 0;
 out:
@@ -679,13 +707,16 @@ bad_mm:
 
 // do_execve - call exit_mmap(mm)&put_pgdir(mm) to reclaim memory space of current process
 //           - call load_icode to setup new memory space accroding binary prog.
+
+// do_execve - 调用 exit_mmap(mm) 和 put_pgdir(mm) 以回收当前进程的内存空间
+//           - 调用 load_icode 根据二进制程序设置新的内存空间
 int
 do_execve(const char *name, size_t len, unsigned char *binary, size_t size) {
     struct mm_struct *mm = current->mm;
-    if (!user_mem_check(mm, (uintptr_t)name, len, 0)) {
+    if (!user_mem_check(mm, (uintptr_t)name, len, 0)) { //检查name的内存空间能否被访问
         return -E_INVAL;
     }
-    if (len > PROC_NAME_LEN) {
+    if (len > PROC_NAME_LEN) { //进程名字的长度有上限 PROC_NAME_LEN，在proc.h定义
         len = PROC_NAME_LEN;
     }
 
@@ -697,17 +728,19 @@ do_execve(const char *name, size_t len, unsigned char *binary, size_t size) {
         cputs("mm != NULL");
         lcr3(boot_cr3);
         if (mm_count_dec(mm) == 0) {
-            exit_mmap(mm);
-            put_pgdir(mm);
-            mm_destroy(mm);
+            exit_mmap(mm); // 释放当前进程的内存空间（解除映射，释放页表对应物理内存）
+            put_pgdir(mm); // 释放当前进程的页目录表
+            mm_destroy(mm);// 销毁并释放内存管理结构体 mm_struct 及其内部字段
         }
         current->mm = NULL;
     }
+    //把新的程序加载到当前进程里的工作都在load_icode()函数里完成
     int ret;
     if ((ret = load_icode(binary, size)) != 0) {
         goto execve_exit;
     }
     set_proc_name(current, local_name);
+    //如果set_proc_name的实现不变, 为什么不能直接set_proc_name(current, name)?
     return 0;
 
 execve_exit:
@@ -722,9 +755,9 @@ do_yield(void) {
     return 0;
 }
 
-// do_wait - wait one OR any children with PROC_ZOMBIE state, and free memory space of kernel stack
-//         - proc struct of this child.
-// NOTE: only after do_wait function, all resources of the child proces are free.
+// do_wait - 等待一个或任何具有 PROC_ZOMBIE 状态的子进程，并释放内核堆栈的内存空间
+//         - 该子进程的 proc 结构。
+// 注意：只有在 do_wait 函数之后，子进程的所有资源才会被释放。
 int
 do_wait(int pid, int *code_store) {
     struct mm_struct *mm = current->mm;
@@ -802,19 +835,28 @@ do_kill(int pid) {
     return -E_INVAL;
 }
 
-// kernel_execve - do SYS_exec syscall to exec a user program called by user_main kernel_thread
-static int
-kernel_execve(const char *name, unsigned char *binary, size_t size) {
-    int64_t ret=0, len = strlen(name);
- //   ret = do_execve(name, len, binary, size);
-    asm volatile(
-        "li a0, %1\n"
-        "lw a1, %2\n"
-        "lw a2, %3\n"
-        "lw a3, %4\n"
-        "lw a4, %5\n"
-    	"li a7, 10\n"
-        "ebreak\n"
+// kernel_execve - 执行 SYS_exec 系统调用以执行由 user_main 内核线程调用的用户程序
+// ************************************************************
+// @name: 用户程序的名称（通常是可执行文件的路径）。
+// @binary: 一个指向程序二进制数据的指针，包含要执行的程序的内容。
+// @size: 程序二进制数据的大小。
+
+// 由于目前我们在S mode下，所以不能通过ecall来产生中断。
+// 我们这里采取一个取巧的办法，用ebreak产生断点中断进行处理，通过设置a7寄存器的值为10说明这不是一个普通的断点中断，----------+
+// 而是要转发到syscall(), 这样用一个不是特别优雅的方式，实现了在内核态使用系统调用。                                    |
+// ************************************************************                                             | 
+static int //                                                                                               |
+kernel_execve(const char *name, unsigned char *binary, size_t size) { //                                    |                             
+    int64_t ret=0, len = strlen(name); //                                                                   |
+ //   ret = do_execve(name, len, binary, size);                                                             |
+    asm volatile( //                                                                                        | 
+        "li a0, %1\n" //                                                                                    |
+        "lw a1, %2\n" //                                                                                    |
+        "lw a2, %3\n" //                                                                                    |
+        "lw a3, %4\n" //                                                                                    |
+        "lw a4, %5\n" //                                                                                    |
+    	"li a7, 10\n" //                                                                                    |
+        "ebreak\n" // <-------------------------------------------------------------------------------------+
         "sw a0, %0\n"
         : "=m"(ret)
         : "i"(SYS_exec), "m"(name), "m"(len), "m"(binary), "m"(size)
@@ -850,6 +892,8 @@ user_main(void *arg) {
     KERNEL_EXECVE2(TEST, TESTSTART, TESTSIZE);
 #else
     KERNEL_EXECVE(exit);
+    // 执行 kern_execve("exit", _binary_obj___user_exit_out_start,_binary_obj___user_exit_out_size);
+    // 实际上，就是加载了存储在这个位置的程序exit并在user_main这个进程里开始执行。这时user_main就从内核进程变成了用户进程。
 #endif
     panic("user_main execve failed.\n");
 }
